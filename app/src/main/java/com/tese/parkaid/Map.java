@@ -1,19 +1,23 @@
 package com.tese.parkaid;
 
+import android.app.ActivityManager;
+import android.content.Intent;
 import android.location.Location;
-import android.support.v4.app.FragmentActivity;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.ClusterManager;
 
 import java.util.ArrayList;
@@ -26,19 +30,22 @@ public class Map extends FragmentActivity implements OnMapReadyCallback, GoogleM
     private Location mLocation;
     private ClusterManager mClusterManager;
     private MyClusterManagerRenderer mMyClusterManagerRenderer;
+    private FusedLocationProviderClient mFusedLocationProviderClient;
     private ArrayList<MarkerCluster> mClusterMarkers = new ArrayList<>();
     private ArrayList<Park> mParks = new ArrayList<>();
+    private static final String TAG = Map.class.getSimpleName();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        fillParks();
+        //fillParks();
+        //mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
     }
@@ -50,19 +57,17 @@ public class Map extends FragmentActivity implements OnMapReadyCallback, GoogleM
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
-
-        if(getIntent().getExtras() != null){
-            mLocation = (Location) getIntent().getSerializableExtra("LastLocation");
-        }
+        mLocation = (Location) getIntent().getParcelableExtra("LastLocation");
 
         //LatLng lisbon = new LatLng(38.722185, -9.139276);
 
         //mPark1 = mGoogleMap.addMarker(new MarkerOptions().position(park1).title("Park1").icon(BitmapDescriptorFactory.fromResource(R.drawable.parkingfree)));
         //mPark1.setTag(0);
-        //mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lisbon, 10));
-        //mGoogleMap.setOnMarkerClickListener(this);
+        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mLocation.getLatitude(), mLocation.getLongitude()), 10));
+        mGoogleMap.setOnMarkerClickListener(this);
 
-        setCameraView();
+        //startLocationService();
+        //setCameraView();
     }
 
     @Override
@@ -116,4 +121,28 @@ public class Map extends FragmentActivity implements OnMapReadyCallback, GoogleM
         }
 
     }
+
+    private void startLocationService(){
+        if(!isLocationServiceRunning()){
+            Intent serviceIntent = new Intent(this, LocationService.class);
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+                Map.this.startForegroundService(serviceIntent);
+            } else{
+                startService(serviceIntent);
+            }
+        }
+    }
+
+    private boolean isLocationServiceRunning(){
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)){
+            if("com.".equals(service.service.getClassName())){
+                Log.d(TAG, "isLocationServiceRunning: location service is already running.");
+                return true;
+            }
+        }
+        Log.d(TAG, "isLocationServiceRunning: location service is not running.");
+        return false;
+    }
+
 }

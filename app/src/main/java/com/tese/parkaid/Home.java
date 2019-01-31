@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -20,14 +21,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
+
+import java.util.List;
 
 import static android.location.LocationManager.GPS_PROVIDER;
 import static com.tese.parkaid.Constants.PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION;
@@ -38,21 +35,19 @@ public class Home extends AppCompatActivity {
 
     private boolean mLocationPermissionGranted = false;
     private static final String TAG = Home.class.getSimpleName();
-    private FusedLocationProviderClient mFusedLocationProviderClient;
     private Location mLastLocation;
-    private LocationRequest mLocationRequest;
-    private LocationCallback mLocationCallback;
+    private LocationManager mLocationManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        getLocationPermission();
     }
 
     private void buildHome() {
-        setTitle("Park Helper");
+        setTitle("Park Aid");
         TextView startPoint = (TextView) findViewById(R.id.startPoint);
         startPoint.setText("Start:");
     }
@@ -63,9 +58,56 @@ public class Home extends AppCompatActivity {
         startActivity(intent);
     }
 
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_ENABLE_GPS:
+                if (mLocationPermissionGranted) {
+                    buildHome();
+                    mLastLocation = getLastKnownLocation();
+                } else {
+                    getLocationPermission();
+                }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (isMapsEnabled()) {
+            if (mLocationPermissionGranted) {
+                buildHome();
+                mLastLocation = getLastKnownLocation();
+            } else {
+                getLocationPermission();
+            }
+        }
+    }
+
+    private Location getLastKnownLocation() {
+        mLocationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
+        List<String> providers = mLocationManager.getProviders(true);
+        Location bestLocation = null;
+        for (String provider : providers) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                return null;
+            }
+            Location l = mLocationManager.getLastKnownLocation(provider);
+            if (l == null) {
+                continue;
+            }
+            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
+                bestLocation = l;
+            }
+        }
+        return bestLocation;
+    }
+
     public boolean isMapsEnabled() {
-        final LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (!manager.isProviderEnabled(GPS_PROVIDER)) {
+        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (!mLocationManager.isProviderEnabled(GPS_PROVIDER)) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("This application requires GPS to run, do you want to enable it?").setCancelable(false)
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -82,25 +124,11 @@ public class Home extends AppCompatActivity {
         return true;
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_ENABLE_GPS:
-                if (mLocationPermissionGranted) {
-                    buildHome();
-                    getLocation();
-                } else {
-                    getLocationPermission();
-                }
-        }
-    }
-
     private void getLocationPermission() {
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mLocationPermissionGranted = true;
             buildHome();
-            getLocation();
+            mLastLocation = getLastKnownLocation();
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         }
@@ -117,56 +145,5 @@ public class Home extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (isMapsEnabled()) {
-            if (mLocationPermissionGranted) {
-                buildHome();
-                getLocation();
-            } else {
-                getLocationPermission();
-            }
-        }
-    }
 
-    private void getLocation() {
-        Log.d(TAG, "GetLocation called");
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        mFusedLocationProviderClient.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
-            @Override
-            public void onComplete(@NonNull Task<Location> task) {
-                if(task.isSuccessful() && task.getResult() != null) {
-                    mLastLocation = task.getResult();
-                    startLocationService();
-                }
-            }
-        });
-    }
-
-    private void startLocationService(){
-        if(!isLocationServiceRunning()){
-            Intent serviceIntent = new Intent(this, LocationService.class);
-
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-                Home.this.startForegroundService(serviceIntent);
-            } else{
-                startService(serviceIntent);
-            }
-        }
-    }
-
-    private boolean isLocationServiceRunning(){
-        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)){
-            if("com.".equals(service.service.getClassName())){
-                Log.d(TAG, "isLocationServiceRunning: location service is already running.");
-                return true;
-            }
-        }
-        Log.d(TAG, "isLocationServiceRunning: location service is not running.");
-        return false;
-    }
 }
