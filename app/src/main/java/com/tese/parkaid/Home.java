@@ -53,7 +53,7 @@ public class Home extends AppCompatActivity {
     }
 
     public void goToMap(View view) {
-        Intent intent = new Intent(this, Map.class);
+        Intent intent = new Intent(this, Maps.class);
         intent.putExtra("LastLocation", mLastLocation);
         startActivity(intent);
     }
