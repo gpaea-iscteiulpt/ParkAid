@@ -1,26 +1,34 @@
 package com.tese.parkaid;
 
+import android.Manifest;
 import android.app.ActivityManager;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.Build;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.ClusterManager;
 
 import java.util.ArrayList;
 
-public class Maps extends FragmentActivity implements OnMapReadyCallback {
+public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, GoogleMap.OnMarkerClickListener {
 
     private GoogleMap mMap;
     private LatLngBounds mMapBoundary;
@@ -48,35 +56,39 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback {
 
         mLocation = (Location) getIntent().getParcelableExtra("LastLocation");
 
-
-        //mPark1 = mGoogleMap.addMarker(new MarkerOptions().position(park1).title("Park1").icon(BitmapDescriptorFactory.fromResource(R.drawable.parkingfree)));
-        //mPark1.setTag(0);
-        //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mLocation.getLatitude(), mLocation.getLongitude()), 10));
-        //mMap.setOnMarkerClickListener(this);
-
+        addMapMarkers();
+        mMap.setOnInfoWindowClickListener(this);
+        mMap.setOnMarkerClickListener(this);
         startLocationService();
         setCameraView();
-
     }
 
-    private void fillParks(){
-        mParks.add(new Park("Park1", "Descrição 1", new LatLng(38.751249, -9.155369),75, 1, 100, "Seg-Dom", "6:00h-23:00h"));
+    private void fillParks() {
+        mParks.add(new Park("Park 1", "Descrição 1", new LatLng(37.423027, -122.086226), 75, 1, 100, "Seg-Dom", "6:00h-23:00h"));
+        mParks.add(new Park("Park 2", "Descrição 2", new LatLng(37.420445, -122.084995), 90, 2, 150, "Seg-Dom", "6:00h-23:00h"));
     }
 
-    private void setCameraView(){
+    private void setCameraView() {
+
         double bottomBoundary = mLocation.getLatitude() - .1;
         double leftBoundary = mLocation.getLongitude() - .1;
         double topBoundary = mLocation.getLatitude() + .1;
         double rightBoundary = mLocation.getLongitude() + .1;
 
-        mMapBoundary = new LatLngBounds(new LatLng(bottomBoundary, leftBoundary), new LatLng(topBoundary,rightBoundary));
+        mMapBoundary = new LatLngBounds(new LatLng(bottomBoundary, leftBoundary), new LatLng(topBoundary, rightBoundary));
 
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        mMap.setMyLocationEnabled(true);
         mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(mMapBoundary, 0));
     }
 
-    private void addMapMarkers(){
-        if(mMap != null) {
 
+
+    private void addMapMarkers(){
+        fillParks();
+        if(mMap != null) {
             if (mClusterManager == null) {
                 mClusterManager = new ClusterManager<MarkerCluster>(this.getApplicationContext(), mMap);
             }
@@ -84,14 +96,11 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback {
                 mMyClusterManagerRenderer = new MyClusterManagerRenderer(this, mMap, mClusterManager);
                 mClusterManager.setRenderer(mMyClusterManagerRenderer);
             }
-
             for (Park park : mParks) {
-
                 MarkerCluster newMarkerCluster = new MarkerCluster(park.getLocation(), park.getName(), park.getName(), park.getIconPicture());
                 mClusterManager.addItem(newMarkerCluster);
                 mClusterMarkers.add(newMarkerCluster);
             }
-
             mClusterManager.cluster();
         }
 
@@ -120,4 +129,14 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback {
         return false;
     }
 
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        Toast.makeText(Maps.this, marker.getTitle(), Toast.LENGTH_SHORT).show();
+        return false;
+    }
 }

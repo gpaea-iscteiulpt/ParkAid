@@ -63,11 +63,11 @@ public class Map extends FragmentActivity implements OnMapReadyCallback, GoogleM
 
         //mPark1 = mGoogleMap.addMarker(new MarkerOptions().position(park1).title("Park1").icon(BitmapDescriptorFactory.fromResource(R.drawable.parkingfree)));
         //mPark1.setTag(0);
-        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mLocation.getLatitude(), mLocation.getLongitude()), 10));
-        mGoogleMap.setOnMarkerClickListener(this);
+        //mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mLocation.getLatitude(), mLocation.getLongitude()), 10));
+        //mGoogleMap.setOnMarkerClickListener(this);
 
-        //startLocationService();
-        //setCameraView();
+        startLocationService();
+        setCameraView();
     }
 
     @Override
