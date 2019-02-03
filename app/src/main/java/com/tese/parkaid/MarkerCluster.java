@@ -9,45 +9,44 @@ import com.google.maps.android.clustering.ClusterItem;
 
 public class MarkerCluster implements ClusterItem{
 
-    private LatLng position;
-    private String title;
-    private String snippet;
+    private String name;
+    private String description;
     private int iconPicture;
+    private int occupancyPercentage;
+    private double pricePerHour;
+    private String workPeriod;
+    private String workHours;
+    private LatLng location;
 
-
-    public MarkerCluster(LatLng position, String title, String snippet, int iconPicture) {
-        this.position = position;
-        this.title = title;
-        this.snippet = snippet;
-        this.iconPicture = iconPicture;
-    }
 
     public MarkerCluster() {
-
     }
 
-    public LatLng getPosition() {
-        return position;
+    public MarkerCluster(String name, String description, int iconPicture, int occupancyPercentage, double pricePerHour, String workPeriod, String workHours, LatLng location) {
+        this.name = name;
+        this.description = description;
+        this.iconPicture = iconPicture;
+        this.occupancyPercentage = occupancyPercentage;
+        this.pricePerHour = pricePerHour;
+        this.workPeriod = workPeriod;
+        this.workHours = workHours;
+        this.location = location;
     }
 
-    public void setPosition(LatLng position) {
-        this.position = position;
+    public String getName() {
+        return name;
     }
 
-    public String getTitle() {
-        return title;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public String getDescription() {
+        return description;
     }
 
-    public String getSnippet() {
-        return snippet;
-    }
-
-    public void setSnippet(String snippet) {
-        this.snippet = snippet;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public int getIconPicture() {
@@ -56,5 +55,60 @@ public class MarkerCluster implements ClusterItem{
 
     public void setIconPicture(int iconPicture) {
         this.iconPicture = iconPicture;
+    }
+
+    public int getOccupancyPercentage() {
+        return occupancyPercentage;
+    }
+
+    public void setOccupancyPercentage(int occupancyPercentage) {
+        this.occupancyPercentage = occupancyPercentage;
+    }
+
+    public double getPricePerHour() {
+        return pricePerHour;
+    }
+
+    public void setPricePerHour(double pricePerHour) {
+        this.pricePerHour = pricePerHour;
+    }
+
+    public String getWorkPeriod() {
+        return workPeriod;
+    }
+
+    public void setWorkPeriod(String workPeriod) {
+        this.workPeriod = workPeriod;
+    }
+
+    public String getWorkHours() {
+        return workHours;
+    }
+
+    public void setWorkHours(String workHours) {
+        this.workHours = workHours;
+    }
+
+    public LatLng getLocation() {
+        return location;
+    }
+
+    public void setLocation(LatLng location) {
+        this.location = location;
+    }
+
+    @Override
+    public LatLng getPosition() {
+        return location;
+    }
+
+    @Override
+    public String getTitle() {
+        return name;
+    }
+
+    @Override
+    public String getSnippet() {
+        return null;
     }
 }

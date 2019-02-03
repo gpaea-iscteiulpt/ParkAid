@@ -12,6 +12,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -38,12 +40,12 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private FusedLocationProviderClient mFusedLocationProviderClient;
     private ArrayList<MarkerCluster> mClusterMarkers = new ArrayList<>();
     private ArrayList<Park> mParks = new ArrayList<>();
-    private static final String TAG = Map.class.getSimpleName();
+    private static final String TAG = Maps.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_maps2);
+        setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -97,7 +99,17 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 mClusterManager.setRenderer(mMyClusterManagerRenderer);
             }
             for (Park park : mParks) {
-                MarkerCluster newMarkerCluster = new MarkerCluster(park.getLocation(), park.getName(), park.getName(), park.getIconPicture());
+                MarkerCluster newMarkerCluster = new MarkerCluster(park.getName(),
+                        park.getDescription(),
+                        park.getIconPicture(),
+                        park.getOccupancyPercentage(),
+                        park.getPricePerHour(),
+                        park.getWorkPeriod(),
+                        park.getWorkHours(),
+                        park.getLocation());
+
+                mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(Maps.this, park));
+
                 mClusterManager.addItem(newMarkerCluster);
                 mClusterMarkers.add(newMarkerCluster);
             }
