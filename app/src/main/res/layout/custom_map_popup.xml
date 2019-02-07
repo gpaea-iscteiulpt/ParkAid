@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:layout_width="200dp"
+    android:layout_width="250dp"
     android:layout_height="200dp"
     android:padding="5dp"
     android:background="@drawable/custom_border"
@@ -41,14 +41,11 @@
             android:layout_marginRight="10dp"
             android:layout_gravity="end"
             android:gravity="center"/>
-
     </LinearLayout>
-
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="50dp">
-
 
         <LinearLayout
             android:layout_width="0dp"
@@ -90,7 +87,6 @@
                     android:text="Address"/>
 
             </LinearLayout>
-
 
         </LinearLayout>
 
@@ -134,7 +130,6 @@
                     android:text="occupied"/>
 
             </LinearLayout>
-
 
         </LinearLayout>
 
@@ -208,12 +203,13 @@
 
             <Button
                 android:id="@+id/slots"
-                android:layout_width="15dp"
-                android:layout_height="35dp"
+                android:layout_width="10dp"
+                android:layout_height="20dp"
                 android:layout_weight="0.4"
+                android:background="@null"
                 android:layout_marginRight="14dp"
                 android:textSize="14dp"
-                android:text="Go"
+                android:text="GO"
                 android:gravity="center_horizontal"
                 android:textColor="@color/maincolor" />
 

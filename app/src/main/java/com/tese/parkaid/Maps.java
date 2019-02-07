@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.LevelListDrawable;
 import android.location.Location;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
@@ -96,7 +98,10 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private void addMapMarkers(){
         fillParks();
         for (Park park : mParks) {
-            Marker marker = mMap.addMarker(new MarkerOptions().position(park.getLocation()).title(park.getName()).icon(BitmapDescriptorFactory.fromResource(park.getIconPicture())));
+
+            Bitmap b = BitmapFactory.decodeResource(getResources(), park.getIconPicture());
+            Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/4,b.getHeight()/4, false);
+            Marker marker = mMap.addMarker(new MarkerOptions().position(park.getLocation()).title(park.getName()).icon(BitmapDescriptorFactory.fromResource(icon)));
             marker.setTag(park);
         }
     }
@@ -199,6 +204,10 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 return true;
             }
         });
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            popupWindow.setElevation(20);
+        }
 
         return false;
     }
