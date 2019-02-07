@@ -12,7 +12,13 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -66,8 +72,8 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     }
 
     private void fillParks() {
-        mParks.add(new Park("Park 1", "Descrição 1", new LatLng(37.423027, -122.086226), 75, 1, 100, "Seg-Dom", "6:00h-23:00h"));
-        mParks.add(new Park("Park 2", "Descrição 2", new LatLng(37.420445, -122.084995), 90, 2, 150, "Seg-Dom", "6:00h-23:00h"));
+        mParks.add(new Park("Park 1", "Descrição 1", new LatLng(38.740684, -9.227912), "Lisboa", 75, 1, 100, "Seg-Dom", "6:00h-23:00h", R.drawable.parking));
+        mParks.add(new Park("Park 2", "Descrição 2", new LatLng(38.734170, -9.223449), "Lisboa", 90, 2, 150, "Seg-Dom", "6:00h-23:00h", R.drawable.parking));
     }
 
     private void setCameraView() {
@@ -87,8 +93,15 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     }
 
 
-
     private void addMapMarkers(){
+        fillParks();
+        for (Park park : mParks) {
+            Marker marker = mMap.addMarker(new MarkerOptions().position(park.getLocation()).title(park.getName()).icon(BitmapDescriptorFactory.fromResource(park.getIconPicture())));
+            marker.setTag(park);
+        }
+    }
+
+    private void addMapMarkersCluster(){
         fillParks();
         if(mMap != null) {
             if (mClusterManager == null) {
@@ -148,7 +161,45 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        Toast.makeText(Maps.this, marker.getTitle(), Toast.LENGTH_SHORT).show();
+        LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+        View popupView = inflater.inflate(R.layout.custom_map_popup, null);
+
+        Park mPark = (Park) marker.getTag();
+        TextView name = (TextView) popupView.findViewById(R.id.name);
+        name.setText(mPark.getName());
+        TextView description = (TextView) popupView.findViewById(R.id.description);
+        description.setText(mPark.getDescription());
+        TextView address = (TextView) popupView.findViewById(R.id.address);
+        address.setText(mPark.getAddress());
+        TextView occupancy = (TextView) popupView.findViewById(R.id.occupancy);
+        occupancy.setText(mPark.getOccupancyPercentage() + "%");
+        ImageView photo = (ImageView) popupView.findViewById(R.id.photo);
+        photo.setImageResource(mPark.getPhoto());
+        TextView hours = (TextView) popupView.findViewById(R.id.hours);
+        hours.setText(mPark.getWorkHours());
+        TextView price = (TextView) popupView.findViewById(R.id.price);
+        String price_string = String.valueOf(mPark.getPricePerHour());
+        //price.setText(price_string + "");
+        TextView period = (TextView) popupView.findViewById(R.id.period);
+        //period.setText(mPark.getWorkPeriod());
+        TextView slots = (TextView) popupView.findViewById(R.id.slots);
+        //slots.setText(mPark.getTotalSlots());
+
+        int width = LinearLayout.LayoutParams.WRAP_CONTENT;
+        int height = LinearLayout.LayoutParams.WRAP_CONTENT;
+        boolean focusable = true;
+        final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+
+        popupWindow.showAtLocation(popupView, Gravity.CENTER, 0, 0);
+
+        popupView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                popupWindow.dismiss();
+                return true;
+            }
+        });
+
         return false;
     }
 }

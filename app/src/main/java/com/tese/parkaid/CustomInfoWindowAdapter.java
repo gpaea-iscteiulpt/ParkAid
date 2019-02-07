@@ -24,25 +24,37 @@ public class CustomInfoWindowAdapter implements InfoWindowAdapter{
     }
 
     private void fillPopWindow(Marker marker, View view){
+        Park p = (Park) marker.getTag();
         TextView name = (TextView) view.findViewById(R.id.name);
         name.setText(mPark.getName());
         TextView description = (TextView) view.findViewById(R.id.description);
         description.setText(mPark.getDescription());
         TextView address = (TextView) view.findViewById(R.id.address);
+        address.setText(mPark.getAddress());
         TextView occupancy = (TextView) view.findViewById(R.id.occupancy);
+        occupancy.setText(mPark.getOccupancyPercentage() + "%");
         ImageView photo = (ImageView) view.findViewById(R.id.photo);
-
-
+        photo.setImageResource(mPark.getPhoto());
+        TextView hours = (TextView) view.findViewById(R.id.hours);
+        hours.setText(mPark.getWorkHours());
+        TextView price = (TextView) view.findViewById(R.id.price);
+        String price_string = String.valueOf(mPark.getPricePerHour());
+        //price.setText(price_string + "");
+        TextView period = (TextView) view.findViewById(R.id.period);
+        //period.setText(mPark.getWorkPeriod());
+        TextView slots = (TextView) view.findViewById(R.id.slots);
+        //slots.setText(mPark.getTotalSlots());
     }
 
     @Override
     public View getInfoWindow(Marker marker) {
-
-        return null;
+        fillPopWindow(marker, mWindow);
+        return mWindow;
     }
 
     @Override
     public View getInfoContents(Marker marker) {
-        return null;
+        fillPopWindow(marker, mWindow);
+        return mWindow;
     }
 }

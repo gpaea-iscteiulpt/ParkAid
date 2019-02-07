@@ -13,11 +13,15 @@ public class Park {
     private String workPeriod;
     private String workHours;
     private LatLng location;
+    private String address;
+    private int photo;
 
-    public Park(String name, String description, LatLng location, int occupancyPercentage, double pricePerHour, int totalSlots, String workPeriod, String workHours) {
+    public Park(String name, String description, LatLng location, String address, int occupancyPercentage, double pricePerHour, int totalSlots, String workPeriod, String workHours, int photo) {
         this.name = name;
         this.description = description;
         this.location = location;
+        this.address = address;
+        this.photo = photo;
         if(occupancyPercentage >= 85){
             iconPicture = R.drawable.parkingfull;
         }else if(occupancyPercentage < 85 & occupancyPercentage >= 50){
@@ -30,6 +34,22 @@ public class Park {
         this.totalSlots = totalSlots;
         this.workPeriod = workPeriod;
         this.workHours = workHours;
+    }
+
+    public int getPhoto() {
+        return photo;
+    }
+
+    public void setPhoto(int photo) {
+        this.photo = photo;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     public String getName() {
