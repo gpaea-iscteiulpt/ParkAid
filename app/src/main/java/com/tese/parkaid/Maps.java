@@ -6,25 +6,29 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.LevelListDrawable;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
+import android.text.SpannableString;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -34,9 +38,18 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.DirectionsApiRequest;
+import com.google.maps.GeoApiContext;
+import com.google.maps.PendingResult;
 import com.google.maps.android.clustering.ClusterManager;
+import com.google.maps.internal.PolylineEncoding;
+import com.google.maps.model.DirectionsResult;
+import com.google.maps.model.DirectionsRoute;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, GoogleMap.OnMarkerClickListener {
 
@@ -45,18 +58,21 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private Location mLocation;
     private ClusterManager mClusterManager;
     private MyClusterManagerRenderer mMyClusterManagerRenderer;
-    private FusedLocationProviderClient mFusedLocationProviderClient;
     private ArrayList<MarkerCluster> mClusterMarkers = new ArrayList<>();
     private ArrayList<Park> mParks = new ArrayList<>();
     private static final String TAG = Maps.class.getSimpleName();
+    private GeoApiContext mGeoApiContext = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        if(mGeoApiContext == null){
+            mGeoApiContext =  new GeoApiContext.Builder().apiKey(getString(R.string.google_maps_key)).build();
+        }
     }
 
 
@@ -98,10 +114,9 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private void addMapMarkers(){
         fillParks();
         for (Park park : mParks) {
-
             Bitmap b = BitmapFactory.decodeResource(getResources(), park.getIconPicture());
-            Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/4,b.getHeight()/4, false);
-            Marker marker = mMap.addMarker(new MarkerOptions().position(park.getLocation()).title(park.getName()).icon(BitmapDescriptorFactory.fromResource(icon)));
+            Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/12,b.getHeight()/12, false);
+            Marker marker = mMap.addMarker(new MarkerOptions().position(park.getLocation()).title(park.getName()).icon(BitmapDescriptorFactory.fromBitmap(icon)));
             marker.setTag(park);
         }
     }
@@ -164,12 +179,15 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
     }
 
+
+
     @Override
     public boolean onMarkerClick(Marker marker) {
         LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-        View popupView = inflater.inflate(R.layout.custom_map_popup, null);
+        final View popupView = inflater.inflate(R.layout.custom_map_popup, null);
 
         Park mPark = (Park) marker.getTag();
+
         TextView name = (TextView) popupView.findViewById(R.id.name);
         name.setText(mPark.getName());
         TextView description = (TextView) popupView.findViewById(R.id.description);
@@ -182,18 +200,23 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         photo.setImageResource(mPark.getPhoto());
         TextView hours = (TextView) popupView.findViewById(R.id.hours);
         hours.setText(mPark.getWorkHours());
-        TextView price = (TextView) popupView.findViewById(R.id.price);
-        String price_string = String.valueOf(mPark.getPricePerHour());
-        //price.setText(price_string + "");
         TextView period = (TextView) popupView.findViewById(R.id.period);
-        //period.setText(mPark.getWorkPeriod());
-        TextView slots = (TextView) popupView.findViewById(R.id.slots);
-        //slots.setText(mPark.getTotalSlots());
+        period.setText(mPark.getWorkPeriod());
+        TextView price = (TextView) popupView.findViewById(R.id.price);
+        price.setText(mPark.getPricePerHour() + "");
+
+        Button go = (Button) popupView.findViewById(R.id.go);
+        String tempString = "Go to location";
+        SpannableString spanString = new SpannableString(tempString);
+        spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, spanString.length(), 0);
+        go.setText(spanString);
 
         int width = LinearLayout.LayoutParams.WRAP_CONTENT;
         int height = LinearLayout.LayoutParams.WRAP_CONTENT;
         boolean focusable = true;
         final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+
+        go.setOnClickListener(new CustomOnClickListener(marker, mGeoApiContext, mLocation, mMap, popupWindow));
 
         popupWindow.showAtLocation(popupView, Gravity.CENTER, 0, 0);
 
@@ -211,4 +234,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
         return false;
     }
+
+
+
 }

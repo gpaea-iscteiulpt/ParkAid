@@ -23,38 +23,36 @@ public class CustomInfoWindowAdapter implements InfoWindowAdapter{
         this.mPark = mPark;
     }
 
-    private void fillPopWindow(Marker marker, View view){
-        Park p = (Park) marker.getTag();
-        TextView name = (TextView) view.findViewById(R.id.name);
-        name.setText(mPark.getName());
-        TextView description = (TextView) view.findViewById(R.id.description);
-        description.setText(mPark.getDescription());
-        TextView address = (TextView) view.findViewById(R.id.address);
-        address.setText(mPark.getAddress());
-        TextView occupancy = (TextView) view.findViewById(R.id.occupancy);
-        occupancy.setText(mPark.getOccupancyPercentage() + "%");
-        ImageView photo = (ImageView) view.findViewById(R.id.photo);
-        photo.setImageResource(mPark.getPhoto());
-        TextView hours = (TextView) view.findViewById(R.id.hours);
-        hours.setText(mPark.getWorkHours());
-        TextView price = (TextView) view.findViewById(R.id.price);
-        String price_string = String.valueOf(mPark.getPricePerHour());
-        //price.setText(price_string + "");
-        TextView period = (TextView) view.findViewById(R.id.period);
-        //period.setText(mPark.getWorkPeriod());
-        TextView slots = (TextView) view.findViewById(R.id.slots);
-        //slots.setText(mPark.getTotalSlots());
-    }
+//    private void fillPopWindow(Marker marker, View view){
+//        Park p = (Park) marker.getTag();
+//        TextView name = (TextView) view.findViewById(R.id.name);
+//        name.setText(mPark.getName());
+//        TextView description = (TextView) view.findViewById(R.id.description);
+//        description.setText(mPark.getDescription());
+//        TextView address = (TextView) view.findViewById(R.id.address);
+//        address.setText(mPark.getAddress());
+//        TextView occupancy = (TextView) view.findViewById(R.id.occupancy);
+//        occupancy.setText(mPark.getOccupancyPercentage() + "%");
+//        ImageView photo = (ImageView) view.findViewById(R.id.photo);
+//        photo.setImageResource(mPark.getPhoto());
+//        TextView hours = (TextView) view.findViewById(R.id.hours);
+//        hours.setText(mPark.getWorkHours());
+//        TextView price = (TextView) view.findViewById(R.id.price);
+//        String price_string = String.valueOf(mPark.getPricePerHour());
+//        //price.setText(price_string + "");
+//        TextView period = (TextView) view.findViewById(R.id.period);
+//        //period.setText(mPark.getWorkPeriod());
+//    }
 
     @Override
     public View getInfoWindow(Marker marker) {
-        fillPopWindow(marker, mWindow);
+        //fillPopWindow(marker, mWindow);
         return mWindow;
     }
 
     @Override
     public View getInfoContents(Marker marker) {
-        fillPopWindow(marker, mWindow);
+        //fillPopWindow(marker, mWindow);
         return mWindow;
     }
 }

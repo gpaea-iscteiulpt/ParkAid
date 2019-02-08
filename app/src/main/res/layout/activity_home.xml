@@ -1,36 +1,150 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".Home">
 
+    <ImageView
+        android:layout_width="141dp"
+        android:layout_height="111dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="136dp"
+        android:layout_marginTop="56dp"
+        android:layout_marginEnd="134dp"
+        android:layout_marginBottom="564dp"
+        android:src="@drawable/parking" />
 
     <TextView
         android:id="@+id/startPoint"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.156" />
-    <Button
-        android:id="@+id/google_map"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="41dp"
+        android:layout_marginLeft="41dp"
+        android:layout_marginTop="201dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="96dp"
-        android:onClick="goToMap"
-        android:text="@string/string_google_maps"
+        android:layout_marginRight="271dp"
+        android:layout_marginBottom="503dp"
+        android:text="Start point:"
+        android:textSize="20dp"
+        app:layout_constraintVertical_bias="0.156" />
+
+    <EditText
+        android:id="@+id/start"
+        android:layout_width="299dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="37dp"
+        android:layout_marginTop="227dp"
+        android:layout_marginEnd="75dp"
+        android:layout_marginBottom="459dp"
+        android:ems="10"
+        android:inputType="textPersonName" />
+
+    <TextView
+        android:id="@+id/endPoint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="39dp"
+        android:layout_marginLeft="39dp"
+        android:layout_marginTop="279dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="282dp"
+        android:layout_marginBottom="425dp"
+        android:text="End point:"
+        android:textSize="20dp"
+        app:layout_constraintVertical_bias="0.156" />
+
+    <EditText
+        android:id="@+id/end"
+        android:layout_width="299dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="39dp"
+        android:layout_marginTop="305dp"
+        android:layout_marginEnd="73dp"
+        android:layout_marginBottom="381dp"
+        android:ems="10"
+        android:inputType="textPersonName" />
+
+    <TextView
+        android:id="@+id/walkRadius"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="40dp"
+        android:layout_marginLeft="40dp"
+        android:layout_marginTop="359dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="233dp"
+        android:layout_marginBottom="345dp"
+        android:text="Walking radius:"
+        android:textSize="20dp"
+        app:layout_constraintVertical_bias="0.156" />
+
+    <EditText
+        android:id="@+id/editText2"
+        android:layout_width="298dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="39dp"
+        android:layout_marginTop="386dp"
+        android:layout_marginEnd="73dp"
+        android:layout_marginBottom="300dp"
+        android:ems="10"
+        android:inputType="number" />
+
+    <Button
+        android:id="@+id/startRoute"
+        android:layout_width="118dp"
+        android:layout_height="48dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="147dp"
+        android:layout_marginTop="471dp"
+        android:layout_marginEnd="146dp"
+        android:layout_marginBottom="212dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-</android.support.constraint.ConstraintLayout>
+    <Button
+        android:id="@+id/google_map"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="21dp"
+        android:layout_marginBottom="16dp"
+        android:onClick="goToMap" />
+
+</RelativeLayout>

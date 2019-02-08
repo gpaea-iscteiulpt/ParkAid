@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
@@ -17,9 +18,13 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.SpannableString;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -48,8 +53,12 @@ public class Home extends AppCompatActivity {
 
     private void buildHome() {
         setTitle("Park Aid");
-        TextView startPoint = (TextView) findViewById(R.id.startPoint);
-        startPoint.setText("Start:");
+
+        Button routeButton = (Button) findViewById(R.id.startRoute);
+        String tempString = "Start route";
+        SpannableString spanString = new SpannableString(tempString);
+        spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, spanString.length(), 0);
+        routeButton.setText(spanString);
     }
 
     public void goToMap(View view) {
@@ -144,6 +153,5 @@ public class Home extends AppCompatActivity {
                 }
         }
     }
-
 
 }
