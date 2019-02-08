@@ -51,7 +51,7 @@ import com.google.maps.model.DirectionsRoute;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, GoogleMap.OnMarkerClickListener {
+public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, GoogleMap.OnMarkerClickListener,  GoogleMap.OnPolylineClickListener{
 
     private GoogleMap mMap;
     private LatLngBounds mMapBoundary;
@@ -62,6 +62,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private ArrayList<Park> mParks = new ArrayList<>();
     private static final String TAG = Maps.class.getSimpleName();
     private GeoApiContext mGeoApiContext = null;
+    private ArrayList<PolylineData> mPolylinesData = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +86,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         addMapMarkers();
         mMap.setOnInfoWindowClickListener(this);
         mMap.setOnMarkerClickListener(this);
+        mMap.setOnPolylineClickListener(this);
         startLocationService();
         setCameraView();
     }
@@ -216,7 +218,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         boolean focusable = true;
         final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
 
-        go.setOnClickListener(new CustomOnClickListener(marker, mGeoApiContext, mLocation, mMap, popupWindow));
+        go.setOnClickListener(new CustomOnClickListener(marker, mGeoApiContext, mLocation, mMap, popupWindow, mPolylinesData));
 
         popupWindow.showAtLocation(popupView, Gravity.CENTER, 0, 0);
 
@@ -236,5 +238,19 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     }
 
 
+    @Override
+    public void onPolylineClick(Polyline polyline) {
 
+        for(PolylineData polylineData: mPolylinesData){
+            Log.d(TAG, "onPolylineClick: toString: " + polylineData.toString());
+            if(polyline.getId().equals(polylineData.getPolyline().getId())){
+                polylineData.getPolyline().setColor(R.color.lightblue);
+                polylineData.getPolyline().setZIndex(1);
+            }
+            else{
+                polylineData.getPolyline().setColor(R.color.grey);
+                polylineData.getPolyline().setZIndex(0);
+            }
+        }
+    }
 }

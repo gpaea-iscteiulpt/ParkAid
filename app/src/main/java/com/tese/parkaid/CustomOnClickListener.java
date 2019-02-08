@@ -31,13 +31,16 @@ public class CustomOnClickListener implements View.OnClickListener {
     private Location mLocation;
     private GoogleMap mMap;
     private PopupWindow mPopupWindow;
+    private ArrayList<PolylineData> mPolylinesData;
 
-    public CustomOnClickListener(Marker marker, GeoApiContext mGeoApiContext, Location mLocation, GoogleMap mMap, PopupWindow mPopupWindow) {
+
+    public CustomOnClickListener(Marker marker, GeoApiContext mGeoApiContext, Location mLocation, GoogleMap mMap, PopupWindow mPopupWindow, ArrayList<PolylineData> mPolylinesData) {
         this.marker = marker;
         this.mGeoApiContext = mGeoApiContext;
         this.mLocation = mLocation;
         this.mMap = mMap;
         this.mPopupWindow = mPopupWindow;
+        this.mPolylinesData = mPolylinesData;
     }
 
     @Override
@@ -85,6 +88,10 @@ public class CustomOnClickListener implements View.OnClickListener {
             @Override
             public void run() {
 
+                if(mPolylinesData.size() > 0){
+                    mPolylinesData = new ArrayList<>();
+                }
+
                 for(DirectionsRoute route: result.routes){
                     List<LatLng> decodedPath = PolylineEncoding.decode(route.overviewPolyline.getEncodedPath());
 
@@ -97,7 +104,7 @@ public class CustomOnClickListener implements View.OnClickListener {
                     Polyline polyline = mMap.addPolyline(new PolylineOptions().addAll(newDecodedPath));
                     polyline.setColor(R.color.grey);
                     polyline.setClickable(true);
-
+                    mPolylinesData.add(new PolylineData(polyline, route.legs[0]));
                 }
             }
         });
