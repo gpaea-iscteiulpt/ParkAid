@@ -3,10 +3,8 @@ package com.tese.parkaid;
 import android.location.Location;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.PopupWindow;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -33,7 +31,6 @@ public class CustomOnClickListener implements View.OnClickListener {
     private PopupWindow mPopupWindow;
     private ArrayList<PolylineData> mPolylinesData;
 
-
     public CustomOnClickListener(Marker marker, GeoApiContext mGeoApiContext, Location mLocation, GoogleMap mMap, PopupWindow mPopupWindow, ArrayList<PolylineData> mPolylinesData) {
         this.marker = marker;
         this.mGeoApiContext = mGeoApiContext;
@@ -43,12 +40,8 @@ public class CustomOnClickListener implements View.OnClickListener {
         this.mPolylinesData = mPolylinesData;
     }
 
-    @Override
-    public void onClick(View v){
-        calculateDirections(marker, mGeoApiContext, mLocation);
-    }
 
-    public void calculateDirections(Marker marker, GeoApiContext mGeoApiContext, Location mLocation){
+    public void calculateDirections(Marker marker){
         Log.d("Calculate", "calculateDirections: calculating directions.");
 
         com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(
@@ -89,11 +82,15 @@ public class CustomOnClickListener implements View.OnClickListener {
             public void run() {
 
                 if(mPolylinesData.size() > 0){
-                    mPolylinesData = new ArrayList<>();
+                    for(PolylineData polylineData: mPolylinesData){
+                        polylineData.getPolyline().remove();
+                    }
+                    mPolylinesData.clear();
                 }
 
+                double duration = 99999;
                 for(DirectionsRoute route: result.routes){
-                    List<LatLng> decodedPath = PolylineEncoding.decode(route.overviewPolyline.getEncodedPath());
+                    List<com.google.maps.model.LatLng> decodedPath = PolylineEncoding.decode(route.overviewPolyline.getEncodedPath());
 
                     List<com.google.android.gms.maps.model.LatLng> newDecodedPath = new ArrayList<>();
 
@@ -102,12 +99,22 @@ public class CustomOnClickListener implements View.OnClickListener {
                     }
 
                     Polyline polyline = mMap.addPolyline(new PolylineOptions().addAll(newDecodedPath));
-                    polyline.setColor(R.color.grey);
+
                     polyline.setClickable(true);
                     mPolylinesData.add(new PolylineData(polyline, route.legs[0]));
+
+                    double tempDuration = route.legs[0].duration.inSeconds;
+                    if(tempDuration < duration){
+                        duration = tempDuration;
+
+                    }
                 }
             }
         });
     }
 
+    @Override
+    public void onClick(View v) {
+        calculateDirections(marker);
+    }
 }

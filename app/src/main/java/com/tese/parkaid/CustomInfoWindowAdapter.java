@@ -1,5 +1,6 @@
 package com.tese.parkaid;
 
+import android.app.Activity;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,46 +14,27 @@ import org.w3c.dom.Text;
 
 public class CustomInfoWindowAdapter implements InfoWindowAdapter{
 
-    private final View mWindow;
     private Context mContext;
-    private Park mPark;
 
-    public CustomInfoWindowAdapter(Context mContext, Park mPark) {
+    public CustomInfoWindowAdapter(Context mContext) {
         this.mContext = mContext;
-        this.mWindow = LayoutInflater.from(mContext).inflate(R.layout.custom_map_popup, null);
-        this.mPark = mPark;
     }
-
-//    private void fillPopWindow(Marker marker, View view){
-//        Park p = (Park) marker.getTag();
-//        TextView name = (TextView) view.findViewById(R.id.name);
-//        name.setText(mPark.getName());
-//        TextView description = (TextView) view.findViewById(R.id.description);
-//        description.setText(mPark.getDescription());
-//        TextView address = (TextView) view.findViewById(R.id.address);
-//        address.setText(mPark.getAddress());
-//        TextView occupancy = (TextView) view.findViewById(R.id.occupancy);
-//        occupancy.setText(mPark.getOccupancyPercentage() + "%");
-//        ImageView photo = (ImageView) view.findViewById(R.id.photo);
-//        photo.setImageResource(mPark.getPhoto());
-//        TextView hours = (TextView) view.findViewById(R.id.hours);
-//        hours.setText(mPark.getWorkHours());
-//        TextView price = (TextView) view.findViewById(R.id.price);
-//        String price_string = String.valueOf(mPark.getPricePerHour());
-//        //price.setText(price_string + "");
-//        TextView period = (TextView) view.findViewById(R.id.period);
-//        //period.setText(mPark.getWorkPeriod());
-//    }
 
     @Override
     public View getInfoWindow(Marker marker) {
-        //fillPopWindow(marker, mWindow);
-        return mWindow;
+        View view = ((Activity) mContext).getLayoutInflater().inflate(R.layout.custom_endlocation_marker, null);
+
+        TextView title = view.findViewById(R.id.title);
+        title.setText(marker.getTitle());
+
+        TextView duration = view.findViewById(R.id.duration);
+        duration.setText(marker.getSnippet());
+
+        return view;
     }
 
     @Override
     public View getInfoContents(Marker marker) {
-        //fillPopWindow(marker, mWindow);
-        return mWindow;
+        return null;
     }
 }

@@ -10,8 +10,6 @@ import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
@@ -27,7 +25,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -39,19 +36,12 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
-import com.google.maps.PendingResult;
 import com.google.maps.android.clustering.ClusterManager;
-import com.google.maps.internal.PolylineEncoding;
-import com.google.maps.model.DirectionsResult;
-import com.google.maps.model.DirectionsRoute;
 
 import java.util.ArrayList;
-import java.util.List;
 
-public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener, GoogleMap.OnMarkerClickListener,  GoogleMap.OnPolylineClickListener{
+public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnPolylineClickListener{
 
     private GoogleMap mMap;
     private LatLngBounds mMapBoundary;
@@ -84,7 +74,6 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         mLocation = (Location) getIntent().getParcelableExtra("LastLocation");
 
         addMapMarkers();
-        mMap.setOnInfoWindowClickListener(this);
         mMap.setOnMarkerClickListener(this);
         mMap.setOnPolylineClickListener(this);
         startLocationService();
@@ -123,35 +112,35 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         }
     }
 
-    private void addMapMarkersCluster(){
-        fillParks();
-        if(mMap != null) {
-            if (mClusterManager == null) {
-                mClusterManager = new ClusterManager<MarkerCluster>(this.getApplicationContext(), mMap);
-            }
-            if (mMyClusterManagerRenderer == null) {
-                mMyClusterManagerRenderer = new MyClusterManagerRenderer(this, mMap, mClusterManager);
-                mClusterManager.setRenderer(mMyClusterManagerRenderer);
-            }
-            for (Park park : mParks) {
-                MarkerCluster newMarkerCluster = new MarkerCluster(park.getName(),
-                        park.getDescription(),
-                        park.getIconPicture(),
-                        park.getOccupancyPercentage(),
-                        park.getPricePerHour(),
-                        park.getWorkPeriod(),
-                        park.getWorkHours(),
-                        park.getLocation());
-
-                mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(Maps.this, park));
-
-                mClusterManager.addItem(newMarkerCluster);
-                mClusterMarkers.add(newMarkerCluster);
-            }
-            mClusterManager.cluster();
-        }
-
-    }
+//    private void addMapMarkersCluster(){
+//        fillParks();
+//        if(mMap != null) {
+//            if (mClusterManager == null) {
+//                mClusterManager = new ClusterManager<MarkerCluster>(this.getApplicationContext(), mMap);
+//            }
+//            if (mMyClusterManagerRenderer == null) {
+//                mMyClusterManagerRenderer = new MyClusterManagerRenderer(this, mMap, mClusterManager);
+//                mClusterManager.setRenderer(mMyClusterManagerRenderer);
+//            }
+//            for (Park park : mParks) {
+//                MarkerCluster newMarkerCluster = new MarkerCluster(park.getName(),
+//                        park.getDescription(),
+//                        park.getIconPicture(),
+//                        park.getOccupancyPercentage(),
+//                        park.getPricePerHour(),
+//                        park.getWorkPeriod(),
+//                        park.getWorkHours(),
+//                        park.getLocation());
+//
+//                mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(Maps.this, park));
+//
+//                mClusterManager.addItem(newMarkerCluster);
+//                mClusterMarkers.add(newMarkerCluster);
+//            }
+//            mClusterManager.cluster();
+//        }
+//
+//    }
 
     private void startLocationService(){
         if(!isLocationServiceRunning()){
@@ -176,12 +165,6 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         return false;
     }
 
-    @Override
-    public void onInfoWindowClick(Marker marker) {
-
-    }
-
-
 
     @Override
     public boolean onMarkerClick(Marker marker) {
@@ -205,7 +188,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         TextView period = (TextView) popupView.findViewById(R.id.period);
         period.setText(mPark.getWorkPeriod());
         TextView price = (TextView) popupView.findViewById(R.id.price);
-        price.setText(mPark.getPricePerHour() + "");
+        price.setText(mPark.getPricePerHour() + "€ p/h");
 
         Button go = (Button) popupView.findViewById(R.id.go);
         String tempString = "Go to location";
@@ -222,7 +205,8 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
         popupWindow.showAtLocation(popupView, Gravity.CENTER, 0, 0);
 
-        popupView.setOnTouchListener(new View.OnTouchListener() {
+        TextView close = (TextView) popupView.findViewById(R.id.close);
+        close.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 popupWindow.dismiss();
@@ -237,20 +221,31 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         return false;
     }
 
-
     @Override
     public void onPolylineClick(Polyline polyline) {
 
+        int index = 0;
         for(PolylineData polylineData: mPolylinesData){
+            index++;
             Log.d(TAG, "onPolylineClick: toString: " + polylineData.toString());
             if(polyline.getId().equals(polylineData.getPolyline().getId())){
-                polylineData.getPolyline().setColor(R.color.lightblue);
+                polylineData.getPolyline().setColor(ContextCompat.getColor(this, R.color.lightblue));
                 polylineData.getPolyline().setZIndex(1);
+
+                LatLng endLocation = new LatLng(polylineData.getLeg().endLocation.lat, polylineData.getLeg().endLocation.lng);
+                Marker marker = mMap.addMarker(new MarkerOptions().position(endLocation)
+                .title("Trip: #" + index)
+                .snippet("Duration: " + polylineData.getLeg().duration));
+
+                CustomInfoWindowAdapter customInfoWindow = new CustomInfoWindowAdapter(this);
+                mMap.setInfoWindowAdapter(customInfoWindow);
+                marker.showInfoWindow();
             }
             else{
-                polylineData.getPolyline().setColor(R.color.grey);
+                polylineData.getPolyline().setColor(ContextCompat.getColor(this, R.color.grey));
                 polylineData.getPolyline().setZIndex(0);
             }
         }
     }
+
 }
