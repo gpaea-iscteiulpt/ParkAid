@@ -41,80 +41,10 @@ public class CustomOnClickListener implements View.OnClickListener {
     }
 
 
-    public void calculateDirections(Marker marker){
-        Log.d("Calculate", "calculateDirections: calculating directions.");
 
-        com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(
-                marker.getPosition().latitude,
-                marker.getPosition().longitude
-        );
-        DirectionsApiRequest directions = new DirectionsApiRequest(mGeoApiContext);
-
-        directions.alternatives(true);
-        directions.origin(
-                new com.google.maps.model.LatLng(
-                        mLocation.getLatitude(),
-                        mLocation.getLongitude()
-                )
-        );
-        Log.d("Calculate", "calculateDirections: destination: " + destination.toString());
-        directions.destination(destination).setCallback(new PendingResult.Callback<DirectionsResult>() {
-            @Override
-            public void onResult(DirectionsResult result) {
-                Log.d("Calculate", "onResult: routes: " + result.routes[0].toString());
-                Log.d("Calculate", "onResult: geocodedWayPoints: " + result.geocodedWaypoints[0].toString());
-                addPolylinesToMap(result);
-            }
-
-            @Override
-            public void onFailure(Throwable e) {
-                Log.e("Calculate", "onFailure: " + e.getMessage() );
-
-            }
-        });
-
-        mPopupWindow.dismiss();
-    }
-
-    private void addPolylinesToMap(final DirectionsResult result){
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-
-                if(mPolylinesData.size() > 0){
-                    for(PolylineData polylineData: mPolylinesData){
-                        polylineData.getPolyline().remove();
-                    }
-                    mPolylinesData.clear();
-                }
-
-                double duration = 99999;
-                for(DirectionsRoute route: result.routes){
-                    List<com.google.maps.model.LatLng> decodedPath = PolylineEncoding.decode(route.overviewPolyline.getEncodedPath());
-
-                    List<com.google.android.gms.maps.model.LatLng> newDecodedPath = new ArrayList<>();
-
-                    for(com.google.maps.model.LatLng latLng: decodedPath){
-                        newDecodedPath.add(new com.google.android.gms.maps.model.LatLng(latLng.lat, latLng.lng));
-                    }
-
-                    Polyline polyline = mMap.addPolyline(new PolylineOptions().addAll(newDecodedPath));
-
-                    polyline.setClickable(true);
-                    mPolylinesData.add(new PolylineData(polyline, route.legs[0]));
-
-                    double tempDuration = route.legs[0].duration.inSeconds;
-                    if(tempDuration < duration){
-                        duration = tempDuration;
-
-                    }
-                }
-            }
-        });
-    }
 
     @Override
     public void onClick(View v) {
-        calculateDirections(marker);
+        //calculateDirections(marker);
     }
 }

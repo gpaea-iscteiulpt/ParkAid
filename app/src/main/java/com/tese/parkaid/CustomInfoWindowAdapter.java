@@ -2,15 +2,11 @@ package com.tese.parkaid;
 
 import android.app.Activity;
 import android.content.Context;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap.InfoWindowAdapter;
 import com.google.android.gms.maps.model.Marker;
-
-import org.w3c.dom.Text;
 
 public class CustomInfoWindowAdapter implements InfoWindowAdapter{
 
@@ -22,6 +18,12 @@ public class CustomInfoWindowAdapter implements InfoWindowAdapter{
 
     @Override
     public View getInfoWindow(Marker marker) {
+        return null;
+    }
+
+    @Override
+    public View getInfoContents(Marker marker) {
+
         View view = ((Activity) mContext).getLayoutInflater().inflate(R.layout.custom_endlocation_marker, null);
 
         TextView title = view.findViewById(R.id.title);
@@ -31,10 +33,6 @@ public class CustomInfoWindowAdapter implements InfoWindowAdapter{
         duration.setText(marker.getSnippet());
 
         return view;
-    }
 
-    @Override
-    public View getInfoContents(Marker marker) {
-        return null;
     }
 }

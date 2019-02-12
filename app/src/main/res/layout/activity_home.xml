@@ -35,6 +35,7 @@
         android:layout_marginRight="271dp"
         android:layout_marginBottom="503dp"
         android:text="Start point:"
+        android:textColor="@color/maincolor"
         android:textSize="20dp"
         app:layout_constraintVertical_bias="0.156" />
 
@@ -62,6 +63,7 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
+        android:textColor="@color/maincolor"
         android:layout_marginStart="39dp"
         android:layout_marginLeft="39dp"
         android:layout_marginTop="279dp"
@@ -95,6 +97,7 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
+        android:textColor="@color/maincolor"
         android:layout_alignParentBottom="true"
         android:layout_marginStart="40dp"
         android:layout_marginLeft="40dp"
@@ -139,6 +142,7 @@
 
     <Button
         android:id="@+id/google_map"
+        android:text="Maps"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
