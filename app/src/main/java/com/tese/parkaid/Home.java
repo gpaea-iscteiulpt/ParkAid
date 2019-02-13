@@ -47,18 +47,7 @@ public class Home extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-
         getLocationPermission();
-    }
-
-    private void buildHome() {
-        setTitle("Park Aid");
-
-        Button routeButton = (Button) findViewById(R.id.startRoute);
-        String tempString = "Start route";
-        SpannableString spanString = new SpannableString(tempString);
-        spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, spanString.length(), 0);
-        routeButton.setText(spanString);
     }
 
     public void goToMap(View view) {
@@ -74,7 +63,6 @@ public class Home extends AppCompatActivity {
         switch (requestCode) {
             case PERMISSIONS_REQUEST_ENABLE_GPS:
                 if (mLocationPermissionGranted) {
-                    buildHome();
                     mLastLocation = getLastKnownLocation();
                 } else {
                     getLocationPermission();
@@ -87,7 +75,6 @@ public class Home extends AppCompatActivity {
         super.onResume();
         if (isMapsEnabled()) {
             if (mLocationPermissionGranted) {
-                buildHome();
                 mLastLocation = getLastKnownLocation();
             } else {
                 getLocationPermission();
@@ -136,7 +123,6 @@ public class Home extends AppCompatActivity {
     private void getLocationPermission() {
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mLocationPermissionGranted = true;
-            buildHome();
             mLastLocation = getLastKnownLocation();
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);

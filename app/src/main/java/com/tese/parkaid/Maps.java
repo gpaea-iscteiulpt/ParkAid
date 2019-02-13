@@ -2,12 +2,17 @@ package com.tese.parkaid;
 
 import android.Manifest;
 import android.app.ActivityManager;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -21,15 +26,20 @@ import android.text.SpannableString;
 import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.util.CollectionUtils;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -51,10 +61,12 @@ import com.google.maps.internal.PolylineEncoding;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 
+import java.io.IOException;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnPolylineClickListener{
+public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnPolylineClickListener, GoogleMap.OnInfoWindowClickListener {
 
     private GoogleMap mMap;
     private LatLngBounds mMapBoundary;
@@ -68,6 +80,8 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private ArrayList<PolylineData> mPolylinesData = new ArrayList<>();
     private Marker mMarkerSelected = null;
     private ArrayList<Marker> mTripMarkers = new ArrayList<>();
+    private AutoCompleteTextView mSearchText;
+    private PlaceAutocompleteAdapter mPlaceAutocompleteAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,8 +90,45 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        mSearchText = (AutoCompleteTextView) findViewById(R.id.input_search);
+        mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if(actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE || event.getAction() == KeyEvent.ACTION_DOWN || event.getAction() == KeyEvent.KEYCODE_ENTER){
+                    geoLocate();
+                }
+
+                return false;
+            }
+        });
+
+        Button btReset = (Button) findViewById(R.id.btReset);
+        btReset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                resetMap();
+                addMapMarkers();
+            }
+        });
+
         if(mGeoApiContext == null){
             mGeoApiContext =  new GeoApiContext.Builder().apiKey(getString(R.string.google_maps_key)).build();
+        }
+    }
+
+    private void geoLocate(){
+        String mSearchTerm = mSearchText.getText().toString();
+        Geocoder geocoder = new Geocoder(Maps.this);
+        List<Address> list = new ArrayList<>();
+        try {
+            list = geocoder.getFromLocationName(mSearchTerm, 1);
+        }catch (IOException exc){
+            Log.e("IOException", "GeoLocate error" + exc.getMessage());
+        }
+
+        if (list.size()>0){
+            Address address = list.get(0);
+
         }
     }
 
@@ -120,10 +171,11 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         fillParks();
         for (Park park : mParks) {
             Bitmap b = BitmapFactory.decodeResource(getResources(), park.getIconPicture());
-            Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/12,b.getHeight()/12, false);
+            Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/14,b.getHeight()/14, false);
             Marker marker = mMap.addMarker(new MarkerOptions().position(park.getLocation()).title(park.getName()).icon(BitmapDescriptorFactory.fromBitmap(icon)));
             marker.setTag(park);
         }
+        mMap.setOnInfoWindowClickListener(this);
     }
 
 //    private void addMapMarkersCluster(){
@@ -372,9 +424,6 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 polylineData.getPolyline().setColor(ContextCompat.getColor(this, R.color.lightblue));
                 polylineData.getPolyline().setZIndex(1);
 
-                CustomInfoWindowAdapter customInfoWindow = new CustomInfoWindowAdapter(this);
-                mMap.setInfoWindowAdapter(customInfoWindow);
-
                 LatLng endLocation = new LatLng(polylineData.getLeg().endLocation.lat, polylineData.getLeg().endLocation.lng);
                 Marker marker = mMap.addMarker(new MarkerOptions().position(endLocation)
                 .title("Trip: #" + index)
@@ -388,6 +437,40 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 polylineData.getPolyline().setColor(ContextCompat.getColor(this, R.color.grey));
                 polylineData.getPolyline().setZIndex(0);
             }
+        }
+    }
+
+    @Override
+    public void onInfoWindowClick(final Marker markerSelected) {
+        if(markerSelected.getTitle().contains("Trip: #")){
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Open Google Maps?")
+                    .setCancelable(true)
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                            String latitude = String.valueOf(markerSelected.getPosition().latitude);
+                            String longitude = String.valueOf(markerSelected.getPosition().longitude);
+                            Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latitude + "," + longitude);
+                            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                            mapIntent.setPackage("com.google.android.apps.maps");
+
+                            try{
+                                if (mapIntent.resolveActivity(getPackageManager()) != null) {
+                                    startActivity(mapIntent);
+                                }
+                            }catch (NullPointerException e){
+                                Toast.makeText(Maps.this, "Couldn't open map", Toast.LENGTH_SHORT).show();
+                            }
+
+                        }
+                    })
+                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                        public void onClick(final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                            dialog.cancel();
+                        }
+                    });
+            final AlertDialog alert = builder.create();
+            alert.show();
         }
     }
 

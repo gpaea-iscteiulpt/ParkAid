@@ -40,9 +40,6 @@ public class CustomOnClickListener implements View.OnClickListener {
         this.mPolylinesData = mPolylinesData;
     }
 
-
-
-
     @Override
     public void onClick(View v) {
         //calculateDirections(marker);

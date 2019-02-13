@@ -9,4 +9,5 @@
     <color name="snow">#FAFAFA</color>
     <color name="grey">#A0A0A0</color>
     <color name="lightblue">#8EC7FF</color>
+    <color name="transp_snow">#E6FAFAFA</color>
 </resources>

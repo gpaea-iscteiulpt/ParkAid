@@ -1,14 +1,21 @@
 package com.tese.parkaid;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.InfoWindowAdapter;
 import com.google.android.gms.maps.model.Marker;
 
-public class CustomInfoWindowAdapter implements InfoWindowAdapter{
+public class CustomInfoWindowAdapter implements InfoWindowAdapter {
 
     private Context mContext;
 
