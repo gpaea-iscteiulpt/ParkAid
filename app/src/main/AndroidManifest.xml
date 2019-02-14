@@ -20,7 +20,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="@string/google_maps_key" />
+            android:value="AIzaSyAq2L5my1A06_6GKNWrKnvHxDgx4yIbABs" />
 
         <activity
             android:name=".Maps"
@@ -34,7 +34,8 @@
 
         <activity
             android:name=".Home"
-            android:label="Park Aid">
+            android:label="Park Aid"
+            android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

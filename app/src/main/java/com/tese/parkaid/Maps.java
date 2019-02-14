@@ -31,6 +31,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -41,7 +42,11 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.util.CollectionUtils;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -66,7 +71,7 @@ import java.security.Key;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnPolylineClickListener, GoogleMap.OnInfoWindowClickListener {
+public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnPolylineClickListener, GoogleMap.OnInfoWindowClickListener{
 
     private GoogleMap mMap;
     private LatLngBounds mMapBoundary;
@@ -80,8 +85,9 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private ArrayList<PolylineData> mPolylinesData = new ArrayList<>();
     private Marker mMarkerSelected = null;
     private ArrayList<Marker> mTripMarkers = new ArrayList<>();
-    private AutoCompleteTextView mSearchText;
-    private PlaceAutocompleteAdapter mPlaceAutocompleteAdapter;
+    private String mWhereFrom;
+    private static final float DEFAULT_ZOOM = 15f;
+    private Address mAddress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,18 +95,6 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         setContentView(R.layout.activity_maps);
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-        mSearchText = (AutoCompleteTextView) findViewById(R.id.input_search);
-        mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if(actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE || event.getAction() == KeyEvent.ACTION_DOWN || event.getAction() == KeyEvent.KEYCODE_ENTER){
-                    geoLocate();
-                }
-
-                return false;
-            }
-        });
 
         Button btReset = (Button) findViewById(R.id.btReset);
         btReset.setOnClickListener(new View.OnClickListener() {
@@ -116,33 +110,40 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         }
     }
 
-    private void geoLocate(){
-        String mSearchTerm = mSearchText.getText().toString();
-        Geocoder geocoder = new Geocoder(Maps.this);
-        List<Address> list = new ArrayList<>();
-        try {
-            list = geocoder.getFromLocationName(mSearchTerm, 1);
-        }catch (IOException exc){
-            Log.e("IOException", "GeoLocate error" + exc.getMessage());
-        }
-
-        if (list.size()>0){
-            Address address = list.get(0);
-
-        }
-    }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
         mLocation = (Location) getIntent().getParcelableExtra("LastLocation");
+        mWhereFrom = (String) getIntent().getStringExtra("WhereFrom");
 
         addMapMarkers();
         mMap.setOnMarkerClickListener(this);
         mMap.setOnPolylineClickListener(this);
         startLocationService();
-        setCameraView();
+
+        switch (mWhereFrom){
+            case "FromMap":
+                setCameraView(mLocation);
+                break;
+            case "FromSearch":
+                mAddress = (Address) getIntent().getParcelableExtra("Address");
+                Location locat = new Location(mAddress.getLatitude(), mAddress.getLongitude());
+                setCameraView(new LatLng(mAddress.getLatitude(), mAddress.getLongitude()));
+                break;
+        }
+    }
+
+    private void moveCamera(LatLng latLng, float zoom, String title){
+        Log.d(TAG, "moveCamera: moving the camera to: lat: " + latLng.latitude + ", lng: " + latLng.longitude );
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
+
+        hideSoftKeyboard();
+    }
+
+    private void hideSoftKeyboard(){
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
     }
 
     private void fillParks() {
@@ -150,12 +151,12 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         mParks.add(new Park("Park 2", "Descrição 2", new LatLng(38.734170, -9.223449), "Lisboa", 90, 2, 150, "Seg-Dom", "6:00h-23:00h", R.drawable.parking));
     }
 
-    private void setCameraView() {
+    private void setCameraView(Location loc) {
 
-        double bottomBoundary = mLocation.getLatitude() - .1;
-        double leftBoundary = mLocation.getLongitude() - .1;
-        double topBoundary = mLocation.getLatitude() + .1;
-        double rightBoundary = mLocation.getLongitude() + .1;
+        double bottomBoundary = loc.getLatitude() - .1;
+        double leftBoundary = loc.getLongitude() - .1;
+        double topBoundary = loc.getLatitude() + .1;
+        double rightBoundary = loc.getLongitude() + .1;
 
         mMapBoundary = new LatLngBounds(new LatLng(bottomBoundary, leftBoundary), new LatLng(topBoundary, rightBoundary));
 
