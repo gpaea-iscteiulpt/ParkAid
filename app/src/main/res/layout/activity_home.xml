@@ -70,18 +70,31 @@
                 android:layout_marginLeft="10dp"
                 android:src="@drawable/search"/>
 
-            <AutoCompleteTextView
+            <!--<AutoCompleteTextView-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="match_parent"-->
+                <!--android:layout_toRightOf="@id/ic_search"-->
+                <!--android:textSize="16dp"-->
+                <!--android:paddingLeft="10dp"-->
+                <!--android:textColor="@color/maincolor"-->
+                <!--android:id="@+id/input_search"-->
+                <!--android:background="@null"-->
+                <!--android:textColorHint="@color/maincolor"-->
+                <!--android:hint="Enter Address, City or Zip Code"-->
+                <!--android:imeOptions="actionSearch"/>-->
+            <fragment
+                android:id="@+id/input_search"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_toRightOf="@id/ic_search"
                 android:textSize="16dp"
                 android:paddingLeft="10dp"
                 android:textColor="@color/maincolor"
-                android:id="@+id/input_search"
                 android:background="@null"
                 android:textColorHint="@color/maincolor"
                 android:hint="Enter Address, City or Zip Code"
-                android:imeOptions="actionSearch"/>
+                android:imeOptions="actionSearch"
+                android:name="com.google.android.gms.location.places.ui.PlaceAutocompleteFragment"/>
 
         </RelativeLayout>
 
@@ -140,6 +153,7 @@
             android:layout_marginTop="20dp"
             android:elevation="5dp"
             android:text="Search"
+            android:onClick="goForSearch"
             android:textColor="@color/snow"
             android:background="@drawable/custom_main_button"/>
 

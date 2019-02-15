@@ -8,4 +8,10 @@ public class Constants {
     public static final long UPDATE_INTERVAL = 4000;
     public static final long FASTEST_INTERVAL = 2000;
 
+    public static int SEARCH_RADIUS = 50;
+
+    public static void setSearchRadius(int value){
+        SEARCH_RADIUS = value;
+    }
+
 }

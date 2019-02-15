@@ -21,13 +21,21 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AutoCompleteTextView;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.Places;
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
+import com.google.android.gms.location.places.ui.PlaceSelectionListener;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,10 +52,7 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
     private static final String TAG = Home.class.getSimpleName();
     private Location mLastLocation;
     private LocationManager mLocationManager;
-    private AutoCompleteTextView mSearchText;
-    private PlaceAutocompleteAdapter mPlaceAutocompleteAdapter;
-    private GoogleApiClient mGoogleApiClient;
-    private LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(new LatLng(-40,-168), new LatLng(71, 136));
+    private PlaceAutocompleteFragment mPlaceAutocompleteFragment ;
     private Address mAddress;
 
     @Override
@@ -56,21 +61,38 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
         setContentView(R.layout.activity_home);
         getLocationPermission();
 
-        mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(Places.GEO_DATA_API).addApi(Places.PLACE_DETECTION_API).enableAutoManage(this, this).build();
+        PlaceAutocompleteFragment autocompleteFragment = (PlaceAutocompleteFragment)
+                getFragmentManager().findFragmentById(R.id.input_search);
 
-        mSearchText = (AutoCompleteTextView) findViewById(R.id.input_search);
-        mPlaceAutocompleteAdapter = new PlaceAutocompleteAdapter(this, mGoogleApiClient, LAT_LNG_BOUNDS, null);
-        mSearchText.setAdapter(mPlaceAutocompleteAdapter);
-        mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if(actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE || event.getAction() == KeyEvent.ACTION_DOWN || event.getAction() == KeyEvent.KEYCODE_ENTER){
-                    geoLocate();
-                }
-                return false;
+            public void onPlaceSelected(Place place) {
+                Toast.makeText(Home.this, "Teste", Toast.LENGTH_SHORT);
+            }
+
+            @Override
+            public void onError(Status status) {
+
             }
         });
     }
+
+//    private void geoLocate(){
+//        String mSearchTerm = autocompleteFragmentgetText().toString();
+//        Geocoder geocoder = new Geocoder(Home.this);
+//        List<Address> list = new ArrayList<>();
+//        try {
+//            list = geocoder.getFromLocationName(mSearchTerm, 1);
+//        }catch (IOException exc){
+//            Log.e("IOException", "GeoLocate error" + exc.getMessage());
+//        }
+//
+//        if (list.size()>0){
+//            Address address = list.get(0);
+//            mAddress = address;
+//        }
+//    }
+
 
     public void goToMap(View view) {
         Intent intent = new Intent(this, Maps.class);
@@ -79,30 +101,15 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
         startActivity(intent);
     }
 
-    private void goForSearch(){
+    public void goForSearch(View view){
         Intent intent = new Intent(this, Maps.class);
         intent.putExtra("LastLocation", mLastLocation);
         intent.putExtra("WhereFrom", "FromSearch");
         intent.putExtra("Address", mAddress);
+        EditText radius = (EditText) findViewById(R.id.searchRadius);
+        Constants.setSearchRadius(Integer.parseInt(radius.getText().toString()));
         startActivity(intent);
     }
-
-    private void geoLocate(){
-        String mSearchTerm = mSearchText.getText().toString();
-        Geocoder geocoder = new Geocoder(Home.this);
-        List<Address> list = new ArrayList<>();
-        try {
-            list = geocoder.getFromLocationName(mSearchTerm, 1);
-        }catch (IOException exc){
-            Log.e("IOException", "GeoLocate error" + exc.getMessage());
-        }
-
-        if (list.size()>0){
-            Address address = list.get(0);
-            mAddress = address;
-        }
-    }
-
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {

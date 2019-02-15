@@ -12,6 +12,7 @@ import android.graphics.Typeface;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -129,8 +130,10 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 break;
             case "FromSearch":
                 mAddress = (Address) getIntent().getParcelableExtra("Address");
-                Location locat = new Location(mAddress.getLatitude(), mAddress.getLongitude());
-                setCameraView(new LatLng(mAddress.getLatitude(), mAddress.getLongitude()));
+                Location temp = new Location(LocationManager.GPS_PROVIDER);
+                temp.setLatitude(mAddress.getLatitude());
+                temp.setLongitude(mAddress.getLongitude());
+                setCameraView(temp);
                 break;
         }
     }
@@ -138,8 +141,8 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private void moveCamera(LatLng latLng, float zoom, String title){
         Log.d(TAG, "moveCamera: moving the camera to: lat: " + latLng.latitude + ", lng: " + latLng.longitude );
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
-
         hideSoftKeyboard();
+
     }
 
     private void hideSoftKeyboard(){
