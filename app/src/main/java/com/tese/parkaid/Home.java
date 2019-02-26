@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -27,7 +29,18 @@ import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.model.LatLng;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 import static android.location.LocationManager.GPS_PROVIDER;
 import static com.tese.parkaid.Constants.PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION;
@@ -41,14 +54,16 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
     private Location mLastLocation;
     private LocationManager mLocationManager;
     private PlaceAutocompleteFragment mPlaceAutocompleteFragment;
-
-    //	CST3Yb4sdzAfXdd5KQUdiUgAGm7Ce6ut
+    private Weather currentWeather;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
         getLocationPermission();
+
+        URL weatherUrl = WeatherApi.buildUrlWeather();
+        new JsonTask().execute(weatherUrl);
 
         mPlaceAutocompleteFragment = (PlaceAutocompleteFragment)
                 getFragmentManager().findFragmentById(R.id.input_search);
@@ -173,4 +188,63 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
     }
+
+
+    public class JsonTask extends AsyncTask<URL, Void, String> {
+
+        @Override
+        protected String doInBackground(URL... urls) {
+            URL weatherUrl = urls[0];
+            String weatherSearchResults = null;
+
+            try{
+                weatherSearchResults = WeatherApi.getResponseForAPI(weatherUrl);
+            }catch (IOException ioe){
+                ioe.printStackTrace();
+            }
+
+            return weatherSearchResults;
+
+        }
+
+        @Override
+        protected void onPostExecute(String weatherSearchResults){
+            if(weatherSearchResults != null && !weatherSearchResults.equals("")){
+                currentWeather = parseJSON(weatherSearchResults);
+            }
+        }
+
+        private Weather parseJSON(String weatherSearchResults){
+            if(weatherSearchResults != null){
+                currentWeather = null;
+            }
+
+            if(weatherSearchResults != null){
+                try {
+                    JSONObject rootObject = new JSONObject(weatherSearchResults);
+                    currentWeather = new Weather();
+                    JSONArray weather = rootObject.getJSONArray("weather");
+                    currentWeather.setDescription(weather.getString(1));
+                    currentWeather.setMain(weather.getString(2));
+                    JSONObject main = rootObject.getJSONObject("main");
+                    currentWeather.setTemperature(main.getDouble("temp"));
+                    currentWeather.setTemperatureMax(main.getDouble("temp_max"));
+                    currentWeather.setTemperatureMin(main.getDouble("temp_min"));
+                    currentWeather.setHumidity(main.getInt("humidity"));
+                    currentWeather.setPressure(main.getLong("pressure"));
+                    JSONObject wind = rootObject.getJSONObject("wind");
+                    currentWeather.setWindSpeed(wind.getDouble("speed"));
+                    currentWeather.setWindDeg(wind.getInt("deg"));
+                    currentWeather.setCloudsPercentage(rootObject.getJSONObject("clouds").getInt("all"));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            return currentWeather;
+        }
+
+
+    }
+
 }
