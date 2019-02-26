@@ -215,17 +215,15 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
         }
 
         private Weather parseJSON(String weatherSearchResults){
-            if(weatherSearchResults != null){
-                currentWeather = null;
-            }
 
             if(weatherSearchResults != null){
                 try {
                     JSONObject rootObject = new JSONObject(weatherSearchResults);
                     currentWeather = new Weather();
                     JSONArray weather = rootObject.getJSONArray("weather");
-                    currentWeather.setDescription(weather.getString(1));
-                    currentWeather.setMain(weather.getString(2));
+                    JSONObject weatherObj = weather.getJSONObject(0);
+                    currentWeather.setDescription(weatherObj.getString("description"));
+                    currentWeather.setMain(weatherObj.getString("main"));
                     JSONObject main = rootObject.getJSONObject("main");
                     currentWeather.setTemperature(main.getDouble("temp"));
                     currentWeather.setTemperatureMax(main.getDouble("temp_max"));
