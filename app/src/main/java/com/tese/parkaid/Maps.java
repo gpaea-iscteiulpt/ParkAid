@@ -85,6 +85,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private String mWhereFrom;
     private Place mDestinationPlace;
     private Location mLocation;
+    private Park mClosestPark;
 
     private Weather mCurrentWeather;
     private Date mCurrentDateAndTime;
@@ -158,16 +159,22 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
     private boolean checkParkInsideRadius(Marker marker, Circle circle){
         float[] distance = new float[2];
+        boolean existsPark = false;
 
-        Location.distanceBetween( marker.getPosition().latitude, marker.getPosition().longitude,
-                circle.getCenter().latitude, circle.getCenter().longitude, distance);
+        float[] lessDistance = new float[2];
 
-        if(distance[0] > circle.getRadius()){
-            //TODO: Verificar se os parques estão dentro.
-            return false;
-        } else {
-            return true;
+        for(Park park : mParks) {
+            Location.distanceBetween(park.getLocation().latitude, park.getLocation().longitude,
+                    circle.getCenter().latitude, circle.getCenter().longitude, distance);
+            //TODO: Testar isto
+            if (distance[0] < circle.getRadius() && lessDistance[0] > distance[0]) {
+                lessDistance[0] = distance[0];
+                mClosestPark = park;
+                existsPark = true;
+            }
         }
+
+        return existsPark;
     }
 
     private void fillParks() {
