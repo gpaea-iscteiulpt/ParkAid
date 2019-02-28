@@ -12,40 +12,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <!--<RelativeLayout-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="50dp"-->
-        <!--android:layout_marginBottom="10dp"-->
-        <!--android:layout_marginRight="10dp"-->
-        <!--android:layout_marginLeft="10dp"-->
-        <!--android:elevation="10dp"-->
-        <!--android:layout_gravity="bottom"-->
-        <!--android:background="@drawable/custom_border"-->
-        <!--android:id="@+id/relLayout1">-->
-
-        <!--<ImageView-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:id="@+id/ic_search"-->
-            <!--android:layout_centerVertical="true"-->
-            <!--android:layout_marginLeft="10dp"-->
-            <!--android:src="@drawable/search"/>-->
-
-        <!--<AutoCompleteTextView-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="match_parent"-->
-            <!--android:layout_toRightOf="@id/ic_search"-->
-            <!--android:textSize="15dp"-->
-            <!--android:paddingLeft="10dp"-->
-            <!--android:textColor="@color/maincolor"-->
-            <!--android:id="@+id/input_search"-->
-            <!--android:background="@null"-->
-            <!--android:textColorHint="@color/maincolor"-->
-            <!--android:hint="Enter Address, City or Zip Code"-->
-            <!--android:imeOptions="actionSearch"/>-->
-
-    <!--</RelativeLayout>-->
-
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -10,16 +10,14 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.location.Address;
-import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
@@ -27,27 +25,17 @@ import android.text.SpannableString;
 import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.inputmethod.EditorInfo;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.util.CollectionUtils;
-import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -67,9 +55,15 @@ import com.google.maps.internal.PolylineEncoding;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
-import java.security.Key;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnPolylineClickListener, GoogleMap.OnInfoWindowClickListener{
@@ -90,12 +84,20 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private static final float DEFAULT_ZOOM = 15f;
     private Address mAddress;
 
+    private Weather currentWeather;
+    private Date currentDateAndTime;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        URL weatherUrl = WeatherApi.buildUrlWeather();
+        new JsonTask().execute(weatherUrl);
+
+        currentDateAndTime = Calendar.getInstance().getTime();
 
         Button btReset = (Button) findViewById(R.id.btReset);
         btReset.setOnClickListener(new View.OnClickListener() {
@@ -476,6 +478,61 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             final AlertDialog alert = builder.create();
             alert.show();
         }
+    }
+
+    public class JsonTask extends AsyncTask<URL, Void, String> {
+
+        @Override
+        protected String doInBackground(URL... urls) {
+            URL weatherUrl = urls[0];
+            String weatherSearchResults = null;
+
+            try{
+                weatherSearchResults = WeatherApi.getResponseForAPI(weatherUrl);
+            }catch (IOException ioe){
+                ioe.printStackTrace();
+            }
+
+            return weatherSearchResults;
+
+        }
+
+        @Override
+        protected void onPostExecute(String weatherSearchResults){
+            if(weatherSearchResults != null && !weatherSearchResults.equals("")){
+                currentWeather = parseJSON(weatherSearchResults);
+            }
+        }
+
+        private Weather parseJSON(String weatherSearchResults){
+
+            if(weatherSearchResults != null){
+                try {
+                    JSONObject rootObject = new JSONObject(weatherSearchResults);
+                    currentWeather = new Weather();
+                    JSONArray weather = rootObject.getJSONArray("weather");
+                    JSONObject weatherObj = weather.getJSONObject(0);
+                    currentWeather.setDescription(weatherObj.getString("description"));
+                    currentWeather.setMain(weatherObj.getString("main"));
+                    JSONObject main = rootObject.getJSONObject("main");
+                    currentWeather.setTemperature(main.getDouble("temp"));
+                    currentWeather.setTemperatureMax(main.getDouble("temp_max"));
+                    currentWeather.setTemperatureMin(main.getDouble("temp_min"));
+                    currentWeather.setHumidity(main.getInt("humidity"));
+                    currentWeather.setPressure(main.getLong("pressure"));
+                    JSONObject wind = rootObject.getJSONObject("wind");
+                    currentWeather.setWindSpeed(wind.getDouble("speed"));
+                    currentWeather.setWindDeg(wind.getInt("deg"));
+                    currentWeather.setCloudsPercentage(rootObject.getJSONObject("clouds").getInt("all"));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            return currentWeather;
+        }
+
+
     }
 
 }
