@@ -12,4 +12,6 @@
     <color name="transp_snow">#E6FAFAFA</color>
     <color name="mainBlue">#2c87c9</color>
     <color name="buttonGrey">#e1e1e2</color>
+    <color name="circleInsideBlue">#e5e6ee</color>
+    <color name="circleStrokeBlue">#5e98c3</color>
 </resources>

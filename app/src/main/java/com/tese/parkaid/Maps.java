@@ -8,8 +8,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Typeface;
-import android.location.Address;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -41,16 +41,18 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.libraries.places.api.model.Place;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.PendingResult;
-import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.internal.PolylineEncoding;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
@@ -68,24 +70,24 @@ import java.util.List;
 
 public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnPolylineClickListener, GoogleMap.OnInfoWindowClickListener{
 
+    private static final String TAG = Maps.class.getSimpleName();
+    private static final float DEFAULT_ZOOM = 15f;
+
     private GoogleMap mMap;
     private LatLngBounds mMapBoundary;
-    private Location mLocation;
-    private ClusterManager mClusterManager;
-    private MyClusterManagerRenderer mMyClusterManagerRenderer;
-    private ArrayList<MarkerCluster> mClusterMarkers = new ArrayList<>();
-    private ArrayList<Park> mParks = new ArrayList<>();
-    private static final String TAG = Maps.class.getSimpleName();
     private GeoApiContext mGeoApiContext = null;
+
+    private ArrayList<Park> mParks = new ArrayList<>();
     private ArrayList<PolylineData> mPolylinesData = new ArrayList<>();
     private Marker mMarkerSelected = null;
     private ArrayList<Marker> mTripMarkers = new ArrayList<>();
-    private String mWhereFrom;
-    private static final float DEFAULT_ZOOM = 15f;
-    private Address mAddress;
 
-    private Weather currentWeather;
-    private Date currentDateAndTime;
+    private String mWhereFrom;
+    private Place mDestinationPlace;
+    private Location mLocation;
+
+    private Weather mCurrentWeather;
+    private Date mCurrentDateAndTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,7 +99,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         URL weatherUrl = WeatherApi.buildUrlWeather();
         new JsonTask().execute(weatherUrl);
 
-        currentDateAndTime = Calendar.getInstance().getTime();
+        mCurrentDateAndTime = Calendar.getInstance().getTime();
 
         Button btReset = (Button) findViewById(R.id.btReset);
         btReset.setOnClickListener(new View.OnClickListener() {
@@ -120,35 +122,52 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
         mLocation = (Location) getIntent().getParcelableExtra("LastLocation");
         mWhereFrom = (String) getIntent().getStringExtra("WhereFrom");
-
-        addMapMarkers();
-        mMap.setOnMarkerClickListener(this);
-        mMap.setOnPolylineClickListener(this);
         startLocationService();
+        addMapMarkers();
 
         switch (mWhereFrom){
             case "FromMap":
                 setCameraView(mLocation);
                 break;
             case "FromSearch":
-                mAddress = (Address) getIntent().getParcelableExtra("Address");
+                int mSearchRadius = (int) getIntent().getIntExtra("Radius", 50);
+                mDestinationPlace = (Place) getIntent().getParcelableExtra("DestinationPlace");
+                Marker newMarker = mMap.addMarker(new MarkerOptions().position(mDestinationPlace.getLatLng()).title(mDestinationPlace.getId()));
+                newMarker.setTag("Destination");
                 Location temp = new Location(LocationManager.GPS_PROVIDER);
-                temp.setLatitude(mAddress.getLatitude());
-                temp.setLongitude(mAddress.getLongitude());
+                temp.setLatitude(mDestinationPlace.getLatLng().latitude);
+                temp.setLongitude(mDestinationPlace.getLatLng().longitude);
+
+                Circle circle = mMap.addCircle(new CircleOptions()
+                        .center(newMarker.getPosition())
+                        .radius(mSearchRadius)
+                        .strokeColor(getColor(R.color.circleStrokeBlue))
+                        .fillColor(getColor(R.color.circleInsideBlue)));
+
+                if(checkParkInsideRadius(newMarker, circle)) {
+                    calculateDirections(newMarker);
+                } else {
+                    Toast.makeText(getBaseContext(), "No parks in the search radius!", Toast.LENGTH_LONG).show();
+                }
                 setCameraView(temp);
                 break;
         }
+        mMap.setOnMarkerClickListener(this);
+        mMap.setOnPolylineClickListener(this);
     }
 
-    private void moveCamera(LatLng latLng, float zoom, String title){
-        Log.d(TAG, "moveCamera: moving the camera to: lat: " + latLng.latitude + ", lng: " + latLng.longitude );
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
-        hideSoftKeyboard();
+    private boolean checkParkInsideRadius(Marker marker, Circle circle){
+        float[] distance = new float[2];
 
-    }
+        Location.distanceBetween( marker.getPosition().latitude, marker.getPosition().longitude,
+                circle.getCenter().latitude, circle.getCenter().longitude, distance);
 
-    private void hideSoftKeyboard(){
-        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        if(distance[0] > circle.getRadius()){
+            //TODO: Verificar se os parques estão dentro.
+            return false;
+        } else {
+            return true;
+        }
     }
 
     private void fillParks() {
@@ -183,36 +202,6 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         }
         mMap.setOnInfoWindowClickListener(this);
     }
-
-//    private void addMapMarkersCluster(){
-//        fillParks();
-//        if(mMap != null) {
-//            if (mClusterManager == null) {
-//                mClusterManager = new ClusterManager<MarkerCluster>(this.getApplicationContext(), mMap);
-//            }
-//            if (mMyClusterManagerRenderer == null) {
-//                mMyClusterManagerRenderer = new MyClusterManagerRenderer(this, mMap, mClusterManager);
-//                mClusterManager.setRenderer(mMyClusterManagerRenderer);
-//            }
-//            for (Park park : mParks) {
-//                MarkerCluster newMarkerCluster = new MarkerCluster(park.getName(),
-//                        park.getDescription(),
-//                        park.getIconPicture(),
-//                        park.getOccupancyPercentage(),
-//                        park.getPricePerHour(),
-//                        park.getWorkPeriod(),
-//                        park.getWorkHours(),
-//                        park.getLocation());
-//
-//                mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(Maps.this, park));
-//
-//                mClusterManager.addItem(newMarkerCluster);
-//                mClusterMarkers.add(newMarkerCluster);
-//            }
-//            mClusterManager.cluster();
-//        }
-//
-//    }
 
     private void startLocationService(){
         if(!isLocationServiceRunning()){
@@ -274,60 +263,68 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
         final View popupView = inflater.inflate(R.layout.custom_map_popup, null);
 
-        Park mPark = (Park) marker.getTag();
+        if(marker.getTag().equals("Destination")) {
 
-        TextView name = (TextView) popupView.findViewById(R.id.name);
-        name.setText(mPark.getName());
-        TextView description = (TextView) popupView.findViewById(R.id.description);
-        description.setText(mPark.getDescription());
-        TextView address = (TextView) popupView.findViewById(R.id.address);
-        address.setText(mPark.getAddress());
-        TextView occupancy = (TextView) popupView.findViewById(R.id.occupancy);
-        occupancy.setText(mPark.getOccupancyPercentage() + "%");
-        ImageView photo = (ImageView) popupView.findViewById(R.id.photo);
-        photo.setImageResource(mPark.getPhoto());
-        TextView hours = (TextView) popupView.findViewById(R.id.hours);
-        hours.setText(mPark.getWorkHours());
-        TextView period = (TextView) popupView.findViewById(R.id.period);
-        period.setText(mPark.getWorkPeriod());
-        TextView price = (TextView) popupView.findViewById(R.id.price);
-        price.setText(mPark.getPricePerHour() + "€ p/h");
+        }else {
 
-        Button go = (Button) popupView.findViewById(R.id.go);
-        String tempString = "Go to location";
-        SpannableString spanString = new SpannableString(tempString);
-        spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, spanString.length(), 0);
-        go.setText(spanString);
+            Park mPark = (Park) marker.getTag();
 
-        int width = LinearLayout.LayoutParams.WRAP_CONTENT;
-        int height = LinearLayout.LayoutParams.WRAP_CONTENT;
-        boolean focusable = true;
-        final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+            TextView name = (TextView) popupView.findViewById(R.id.name);
+            name.setText(mPark.getName());
+            TextView description = (TextView) popupView.findViewById(R.id.description);
+            description.setText(mPark.getDescription());
+            TextView address = (TextView) popupView.findViewById(R.id.address);
+            address.setText(mPark.getAddress());
+            TextView occupancy = (TextView) popupView.findViewById(R.id.occupancy);
+            occupancy.setText(mPark.getOccupancyPercentage() + "%");
+            ImageView photo = (ImageView) popupView.findViewById(R.id.photo);
+            photo.setImageResource(mPark.getPhoto());
+            TextView hours = (TextView) popupView.findViewById(R.id.hours);
+            hours.setText(mPark.getWorkHours());
+            TextView period = (TextView) popupView.findViewById(R.id.period);
+            period.setText(mPark.getWorkPeriod());
+            TextView price = (TextView) popupView.findViewById(R.id.price);
+            price.setText(mPark.getPricePerHour() + "€ p/h");
 
-        go.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resetSelectedMarker();
-                mMarkerSelected = marker;
-                calculateDirections(marker);
-                popupWindow.dismiss();
+            Button go = (Button) popupView.findViewById(R.id.go);
+            String tempString = "Go to location";
+            SpannableString spanString = new SpannableString(tempString);
+            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, spanString.length(), 0);
+            go.setText(spanString);
+
+            int width = LinearLayout.LayoutParams.WRAP_CONTENT;
+            int height = LinearLayout.LayoutParams.WRAP_CONTENT;
+            boolean focusable = true;
+            final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+
+            go.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    resetSelectedMarker();
+                    mMarkerSelected = marker;
+                    calculateDirections(marker);
+                    popupWindow.dismiss();
+                }
+            });
+
+            popupWindow.showAtLocation(popupView, Gravity.CENTER, 0, 0);
+
+            TextView close = (TextView) popupView.findViewById(R.id.close);
+            close.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    popupWindow.dismiss();
+                    return true;
+                }
+            });
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                popupWindow.setElevation(20);
             }
-        });
 
-        popupWindow.showAtLocation(popupView, Gravity.CENTER, 0, 0);
-
-        TextView close = (TextView) popupView.findViewById(R.id.close);
-        close.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                popupWindow.dismiss();
-                return true;
-            }
-        });
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            popupWindow.setElevation(20);
         }
+
+
 
         return false;
     }
@@ -403,15 +400,6 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private void resetMap(){
         if(mMap != null) {
             mMap.clear();
-
-            if(mClusterManager != null){
-                mClusterManager.clearItems();
-            }
-
-            if (mClusterMarkers.size() > 0) {
-                mClusterMarkers.clear();
-                mClusterMarkers = new ArrayList<>();
-            }
 
             if(mPolylinesData.size() > 0){
                 mPolylinesData.clear();
@@ -500,7 +488,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         @Override
         protected void onPostExecute(String weatherSearchResults){
             if(weatherSearchResults != null && !weatherSearchResults.equals("")){
-                currentWeather = parseJSON(weatherSearchResults);
+                mCurrentWeather = parseJSON(weatherSearchResults);
             }
         }
 
@@ -509,27 +497,27 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             if(weatherSearchResults != null){
                 try {
                     JSONObject rootObject = new JSONObject(weatherSearchResults);
-                    currentWeather = new Weather();
+                    mCurrentWeather = new Weather();
                     JSONArray weather = rootObject.getJSONArray("weather");
                     JSONObject weatherObj = weather.getJSONObject(0);
-                    currentWeather.setDescription(weatherObj.getString("description"));
-                    currentWeather.setMain(weatherObj.getString("main"));
+                    mCurrentWeather.setDescription(weatherObj.getString("description"));
+                    mCurrentWeather.setMain(weatherObj.getString("main"));
                     JSONObject main = rootObject.getJSONObject("main");
-                    currentWeather.setTemperature(main.getDouble("temp"));
-                    currentWeather.setTemperatureMax(main.getDouble("temp_max"));
-                    currentWeather.setTemperatureMin(main.getDouble("temp_min"));
-                    currentWeather.setHumidity(main.getInt("humidity"));
-                    currentWeather.setPressure(main.getLong("pressure"));
+                    mCurrentWeather.setTemperature(main.getDouble("temp"));
+                    mCurrentWeather.setTemperatureMax(main.getDouble("temp_max"));
+                    mCurrentWeather.setTemperatureMin(main.getDouble("temp_min"));
+                    mCurrentWeather.setHumidity(main.getInt("humidity"));
+                    mCurrentWeather.setPressure(main.getLong("pressure"));
                     JSONObject wind = rootObject.getJSONObject("wind");
-                    currentWeather.setWindSpeed(wind.getDouble("speed"));
-                    currentWeather.setWindDeg(wind.getInt("deg"));
-                    currentWeather.setCloudsPercentage(rootObject.getJSONObject("clouds").getInt("all"));
+                    mCurrentWeather.setWindSpeed(wind.getDouble("speed"));
+                    mCurrentWeather.setWindDeg(wind.getInt("deg"));
+                    mCurrentWeather.setCloudsPercentage(rootObject.getJSONObject("clouds").getInt("all"));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
 
-            return currentWeather;
+            return mCurrentWeather;
         }
 
 

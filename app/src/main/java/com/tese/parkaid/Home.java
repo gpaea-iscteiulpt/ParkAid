@@ -42,6 +42,7 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
     private static final String TAG = Home.class.getSimpleName();
     private Location mLastLocation;
     private LocationManager mLocationManager;
+    private Place mDestinationPlace;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,14 +59,12 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
         AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
                 getSupportFragmentManager().findFragmentById(R.id.input_search);
 
-        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS));
+        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG));
         autocompleteFragment.setCountry("pt");
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
-
-                final LatLng destination = place.getLatLng();
-                Toast.makeText(Home.this, "Teste", Toast.LENGTH_SHORT).show();
+                mDestinationPlace = place;
             }
 
             @Override
@@ -88,8 +87,10 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
         Intent intent = new Intent(this, Maps.class);
         intent.putExtra("LastLocation", mLastLocation);
         intent.putExtra("WhereFrom", "FromSearch");
+        intent.putExtra("DestinationPlace", mDestinationPlace);
         EditText radius = (EditText) findViewById(R.id.searchRadius);
         Constants.setSearchRadius(Integer.parseInt(radius.getText().toString()));
+        intent.putExtra("Radius", Constants.SEARCH_RADIUS);
         startActivity(intent);
     }
 
