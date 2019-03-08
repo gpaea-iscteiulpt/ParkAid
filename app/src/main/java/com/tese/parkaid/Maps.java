@@ -81,11 +81,13 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private ArrayList<PolylineData> mPolylinesData = new ArrayList<>();
     private Marker mMarkerSelected = null;
     private ArrayList<Marker> mTripMarkers = new ArrayList<>();
+    private ArrayList<Marker> mMarkersArray = new ArrayList<>();
 
     private String mWhereFrom;
     private Place mDestinationPlace;
     private Location mLocation;
     private Park mClosestPark;
+    private float mClosestDistance;
 
     private Weather mCurrentWeather;
     private Date mCurrentDateAndTime;
@@ -145,10 +147,39 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                         .strokeColor(getColor(R.color.circleStrokeBlue))
                         .fillColor(getColor(R.color.circleInsideBlue)));
 
-                if(checkParkInsideRadius(newMarker, circle)) {
-                    calculateDirections(newMarker);
+                float lessDistance = checkParkInsideRadius(circle);
+                if(lessDistance > 0) {
+                    for (Marker marker : mMarkersArray) {
+                        if (marker.getTag().equals(mClosestPark)) {
+                            mMarkerSelected = marker;
+                            calculateDirections(marker);
+                            break;
+                        }
+                    }
                 } else {
-                    Toast.makeText(getBaseContext(), "No parks in the search radius!", Toast.LENGTH_LONG).show();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setMessage("Closest parking lot is at " + Math.round(mClosestDistance) + " meters from the destination. Want to navigate to there?")
+                            .setTitle("No parking lot found in the search radius.");
+                    builder.setPositiveButton("Navigate", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            for (Marker marker : mMarkersArray) {
+                                if (marker.getTag().equals(mClosestPark)) {
+                                    mMarkerSelected = marker;
+                                    calculateDirections(marker);
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                    builder.setCancelable(false);
+                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                            finish();
+                        }
+                    });
+                    AlertDialog alertDialog = builder.create();
+                    alertDialog.show();
                 }
                 setCameraView(temp);
                 break;
@@ -157,24 +188,26 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         mMap.setOnPolylineClickListener(this);
     }
 
-    private boolean checkParkInsideRadius(Marker marker, Circle circle){
+    private float checkParkInsideRadius(Circle circle){
         float[] distance = new float[2];
-        boolean existsPark = false;
-
-        float[] lessDistance = new float[2];
+        float lessDistance = 0;
+        mClosestDistance = 0;
 
         for(Park park : mParks) {
             Location.distanceBetween(park.getLocation().latitude, park.getLocation().longitude,
                     circle.getCenter().latitude, circle.getCenter().longitude, distance);
-            //TODO: Testar isto
-            if (distance[0] < circle.getRadius() && lessDistance[0] > distance[0]) {
-                lessDistance[0] = distance[0];
+
+            if (distance[0] < circle.getRadius() && (lessDistance > distance[0] || lessDistance == 0)) {
+                lessDistance = distance[0];
+            }
+
+            if (distance[0] < mClosestDistance || mClosestDistance == 0) {
+                mClosestDistance = distance[0];
                 mClosestPark = park;
-                existsPark = true;
             }
         }
 
-        return existsPark;
+        return lessDistance;
     }
 
     private void fillParks() {
@@ -206,6 +239,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/14,b.getHeight()/14, false);
             Marker marker = mMap.addMarker(new MarkerOptions().position(park.getLocation()).title(park.getName()).icon(BitmapDescriptorFactory.fromBitmap(icon)));
             marker.setTag(park);
+            mMarkersArray.add(marker);
         }
         mMap.setOnInfoWindowClickListener(this);
     }
@@ -328,10 +362,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 popupWindow.setElevation(20);
             }
-
         }
-
-
 
         return false;
     }
@@ -361,6 +392,15 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 Log.e("Calculate", "onFailure: " + e.getMessage() );
             }
         });
+    }
+
+    private void drawRoute(long currentMaxReachableDistance, Marker destination){
+        long maxReachableDistance = currentMaxReachableDistance;
+        //if(maxReachableDistance >= destination){
+//            calculateDirections(destination);
+//        }else{
+//
+//        }
     }
 
     private void addPolylinesToMap(final DirectionsResult result){
@@ -427,8 +467,8 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
                 LatLng endLocation = new LatLng(polylineData.getLeg().endLocation.lat, polylineData.getLeg().endLocation.lng);
                 Marker marker = mMap.addMarker(new MarkerOptions().position(endLocation)
-                .title("Trip: #" + index)
-                .snippet("Duration: " + polylineData.getLeg().duration));
+                                        .title("Trip: #" + index)
+                                        .snippet("Duration: " + polylineData.getLeg().duration));
 
                 marker.showInfoWindow();
 

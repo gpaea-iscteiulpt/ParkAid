@@ -86,7 +86,7 @@
             android:layout_marginLeft="10dp"
             android:textStyle="bold"
             android:gravity="center"
-            android:text="Park Search Radius:"
+            android:text="Park Search Radius (Meters):"
             android:textSize="16dp"
             android:textColor="@color/maincolor"/>
 
@@ -131,7 +131,7 @@
             android:layout_height="match_parent"
             android:layout_marginTop="20dp"
             android:elevation="5dp"
-            android:text="Search"
+            android:text="Navigate"
             android:onClick="goForSearch"
             android:textColor="@color/snow"
             android:background="@drawable/custom_main_button"/>

@@ -21,7 +21,10 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.PlacesClient;
@@ -36,11 +39,12 @@ import static com.tese.parkaid.Constants.PERMISSIONS_REQUEST_ACCESS_FINE_LOCATIO
 import static com.tese.parkaid.Constants.PERMISSIONS_REQUEST_ENABLE_GPS;
 
 
-public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnectionFailedListener  {
+public class Home extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
 
     private boolean mLocationPermissionGranted = false;
     private static final String TAG = Home.class.getSimpleName();
     private Location mLastLocation;
+    private FusedLocationProviderClient fusedLocationClient;
     private LocationManager mLocationManager;
     private Place mDestinationPlace;
 
@@ -48,7 +52,11 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        getLocationPermission();
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        //getLocationPermission();
+        getLocation();
 
         if (!Places.isInitialized()) {
             Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));
@@ -69,11 +77,25 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
 
             @Override
             public void onError(Status status) {
-                
                 Toast.makeText(Home.this, status.getStatusMessage(), Toast.LENGTH_SHORT).show();
             }
         });
 
+    }
+
+    private void getLocation(){
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        if (location != null) {
+                            mLastLocation = location;
+                        }
+                    }
+                });
     }
 
     public void goToMap(View view) {
@@ -112,7 +134,8 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
         super.onResume();
         if (isMapsEnabled()) {
             if (mLocationPermissionGranted) {
-                mLastLocation = getLastKnownLocation();
+                getLocation();
+                //mLastLocation = getLastKnownLocation();
             } else {
                 getLocationPermission();
             }
@@ -160,7 +183,7 @@ public class Home extends AppCompatActivity  implements GoogleApiClient.OnConnec
     private void getLocationPermission() {
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mLocationPermissionGranted = true;
-            mLastLocation = getLastKnownLocation();
+            getLocation();
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         }
