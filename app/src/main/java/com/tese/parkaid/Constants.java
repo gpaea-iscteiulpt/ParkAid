@@ -14,4 +14,15 @@ public class Constants {
         SEARCH_RADIUS = value;
     }
 
+    public static String USERNAME = "";
+    public static int USER_POINTS = 0;
+
+    public static void setUsername(String str){
+        USERNAME = str;
+    }
+
+    public static void setUserPoints(int value){
+        USER_POINTS = value;
+    }
+
 }

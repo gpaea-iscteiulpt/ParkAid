@@ -133,22 +133,43 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 setCameraView(mLocation);
                 break;
             case "FromSearch":
-                int mSearchRadius = (int) getIntent().getIntExtra("Radius", 50);
-                mDestinationPlace = (Place) getIntent().getParcelableExtra("DestinationPlace");
-                Marker newMarker = mMap.addMarker(new MarkerOptions().position(mDestinationPlace.getLatLng()).title(mDestinationPlace.getId()));
-                newMarker.setTag("Destination");
-                Location temp = new Location(LocationManager.GPS_PROVIDER);
-                temp.setLatitude(mDestinationPlace.getLatLng().latitude);
-                temp.setLongitude(mDestinationPlace.getLatLng().longitude);
+                prepareNavigate();
+                break;
+        }
+        mMap.setOnMarkerClickListener(this);
+        mMap.setOnPolylineClickListener(this);
+    }
 
-                Circle circle = mMap.addCircle(new CircleOptions()
-                        .center(newMarker.getPosition())
-                        .radius(mSearchRadius)
-                        .strokeColor(getColor(R.color.circleStrokeBlue))
-                        .fillColor(getColor(R.color.circleInsideBlue)));
+    private void prepareNavigate(){
+        int mSearchRadius = (int) getIntent().getIntExtra("Radius", 50);
+        mDestinationPlace = (Place) getIntent().getParcelableExtra("DestinationPlace");
+        Marker newMarker = mMap.addMarker(new MarkerOptions().position(mDestinationPlace.getLatLng()).title(mDestinationPlace.getId()));
+        newMarker.setTag("Destination");
+        Location temp = new Location(LocationManager.GPS_PROVIDER);
+        temp.setLatitude(mDestinationPlace.getLatLng().latitude);
+        temp.setLongitude(mDestinationPlace.getLatLng().longitude);
 
-                float lessDistance = checkParkInsideRadius(circle);
-                if(lessDistance > 0) {
+        Circle circle = mMap.addCircle(new CircleOptions()
+                .center(newMarker.getPosition())
+                .radius(mSearchRadius)
+                .strokeColor(getColor(R.color.circleStrokeBlue))
+                .fillColor(getColor(R.color.circleInsideBlue)));
+
+        float lessDistance = checkParkInsideRadius(circle);
+        if(lessDistance > 0) {
+            for (Marker marker : mMarkersArray) {
+                if (marker.getTag().equals(mClosestPark)) {
+                    mMarkerSelected = marker;
+                    calculateDirections(marker);
+                    break;
+                }
+            }
+        } else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Closest parking lot is at " + Math.round(mClosestDistance) + " meters from the destination. Want to navigate to there?")
+                    .setTitle("No parking lot found in the search radius.");
+            builder.setPositiveButton("Navigate", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
                     for (Marker marker : mMarkersArray) {
                         if (marker.getTag().equals(mClosestPark)) {
                             mMarkerSelected = marker;
@@ -156,36 +177,19 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                             break;
                         }
                     }
-                } else {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setMessage("Closest parking lot is at " + Math.round(mClosestDistance) + " meters from the destination. Want to navigate to there?")
-                            .setTitle("No parking lot found in the search radius.");
-                    builder.setPositiveButton("Navigate", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            for (Marker marker : mMarkersArray) {
-                                if (marker.getTag().equals(mClosestPark)) {
-                                    mMarkerSelected = marker;
-                                    calculateDirections(marker);
-                                    break;
-                                }
-                            }
-                        }
-                    });
-                    builder.setCancelable(false);
-                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            dialog.cancel();
-                            finish();
-                        }
-                    });
-                    AlertDialog alertDialog = builder.create();
-                    alertDialog.show();
                 }
-                setCameraView(temp);
-                break;
+            });
+            builder.setCancelable(false);
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    dialog.cancel();
+                    finish();
+                }
+            });
+            AlertDialog alertDialog = builder.create();
+            alertDialog.show();
         }
-        mMap.setOnMarkerClickListener(this);
-        mMap.setOnPolylineClickListener(this);
+        setCameraView(temp);
     }
 
     private float checkParkInsideRadius(Circle circle){
@@ -282,7 +286,6 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     }
 
     public void zoomRoute(List<LatLng> lstLatLngRoute) {
-
         if (mMap == null || lstLatLngRoute == null || lstLatLngRoute.isEmpty()) return;
 
         LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
@@ -392,15 +395,6 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 Log.e("Calculate", "onFailure: " + e.getMessage() );
             }
         });
-    }
-
-    private void drawRoute(long currentMaxReachableDistance, Marker destination){
-        long maxReachableDistance = currentMaxReachableDistance;
-        //if(maxReachableDistance >= destination){
-//            calculateDirections(destination);
-//        }else{
-//
-//        }
     }
 
     private void addPolylinesToMap(final DirectionsResult result){

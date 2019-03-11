@@ -41,11 +41,8 @@ import static com.tese.parkaid.Constants.PERMISSIONS_REQUEST_ENABLE_GPS;
 
 public class Home extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
 
-    private boolean mLocationPermissionGranted = false;
     private static final String TAG = Home.class.getSimpleName();
     private Location mLastLocation;
-    private FusedLocationProviderClient fusedLocationClient;
-    private LocationManager mLocationManager;
     private Place mDestinationPlace;
 
     @Override
@@ -53,14 +50,12 @@ public class Home extends AppCompatActivity implements GoogleApiClient.OnConnect
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
-        //getLocationPermission();
-        getLocation();
 
         if (!Places.isInitialized()) {
             Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));
         }
+
+        mLastLocation = (Location) getIntent().getParcelableExtra("LastLocation");
 
         PlacesClient placesClient = Places.createClient(this);
 
@@ -83,28 +78,6 @@ public class Home extends AppCompatActivity implements GoogleApiClient.OnConnect
 
     }
 
-    private void getLocation(){
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        if (location != null) {
-                            mLastLocation = location;
-                        }
-                    }
-                });
-    }
-
-    public void goToMap(View view) {
-        Intent intent = new Intent(this, Maps.class);
-        intent.putExtra("LastLocation", mLastLocation);
-        intent.putExtra("WhereFrom", "FromMap");
-        startActivity(intent);
-    }
-
     public void goForSearch(View view){
         Intent intent = new Intent(this, Maps.class);
         intent.putExtra("LastLocation", mLastLocation);
@@ -116,89 +89,6 @@ public class Home extends AppCompatActivity implements GoogleApiClient.OnConnect
         startActivity(intent);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_ENABLE_GPS:
-                if (mLocationPermissionGranted) {
-                    mLastLocation = getLastKnownLocation();
-                } else {
-                    getLocationPermission();
-                }
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (isMapsEnabled()) {
-            if (mLocationPermissionGranted) {
-                getLocation();
-                //mLastLocation = getLastKnownLocation();
-            } else {
-                getLocationPermission();
-            }
-        }
-    }
-
-    private Location getLastKnownLocation() {
-        mLocationManager = (LocationManager) getApplicationContext().getSystemService(LOCATION_SERVICE);
-        List<String> providers = mLocationManager.getProviders(true);
-        Location bestLocation = null;
-        for (String provider : providers) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                return null;
-            }
-            Location l = mLocationManager.getLastKnownLocation(provider);
-            if (l == null) {
-                continue;
-            }
-            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
-                bestLocation = l;
-            }
-        }
-        return bestLocation;
-    }
-
-    public boolean isMapsEnabled() {
-        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (!mLocationManager.isProviderEnabled(GPS_PROVIDER)) {
-            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage("This application requires GPS to run, do you want to enable it?").setCancelable(false)
-                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Intent enableGpsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                            startActivityForResult(enableGpsIntent, PERMISSIONS_REQUEST_ENABLE_GPS);
-                        }
-                    });
-            final AlertDialog alert = builder.create();
-            alert.show();
-            return false;
-        }
-        return true;
-    }
-
-    private void getLocationPermission() {
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            mLocationPermissionGranted = true;
-            getLocation();
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-        mLocationPermissionGranted = false;
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    mLocationPermissionGranted = true;
-                }
-        }
-    }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {

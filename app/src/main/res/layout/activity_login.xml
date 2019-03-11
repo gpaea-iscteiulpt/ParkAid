@@ -4,10 +4,9 @@
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:paddingTop="40dp"
     android:background="@drawable/background"
     android:orientation="vertical">
-
-    <include layout="@layout/custom_userpoints"/>
 
     <ImageView
         android:id="@+id/icon"
@@ -42,7 +41,7 @@
         android:background="@drawable/custom_pop_background">
 
         <TextView
-            android:id="@+id/txtDestination"
+            android:id="@+id/txtUsername"
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginTop="10dp"
@@ -50,7 +49,7 @@
             android:layout_marginLeft="10dp"
             android:gravity="center"
             android:textStyle="bold"
-            android:text="Destination:"
+            android:text="Username:"
             android:textSize="16dp"
             android:textColor="@color/maincolor"/>
 
@@ -64,23 +63,22 @@
             android:background="@drawable/custom_border"
             android:id="@+id/locationLayout">
 
-            <fragment
-                android:id="@+id/input_search"
+            <EditText
+                android:id="@+id/username"
+                android:textColor="@color/maincolor"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:textSize="16dp"
-                android:paddingLeft="10dp"
-                android:textColor="@color/maincolor"
                 android:background="@null"
-                android:textColorHint="@color/maincolor"
-                android:hint="Enter Address, City or Zip Code"
-                android:imeOptions="actionSearch"
-                android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"/>
+                android:gravity="center"
+                android:textSize="16dp"
+                android:hint="Username"
+                android:ems="10"
+                android:inputType="text"/>
 
         </RelativeLayout>
 
         <TextView
-            android:id="@+id/txtParkSearchRadius"
+            android:id="@+id/txtPassword"
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginTop="10dp"
@@ -88,7 +86,7 @@
             android:layout_marginLeft="10dp"
             android:textStyle="bold"
             android:gravity="center"
-            android:text="Park Search Radius (Meters):"
+            android:text="Password:"
             android:textSize="16dp"
             android:textColor="@color/maincolor"/>
 
@@ -104,7 +102,7 @@
             android:id="@+id/radiusLayout">
 
             <EditText
-                android:id="@+id/searchRadius"
+                android:id="@+id/password"
                 android:textColor="@color/maincolor"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -112,8 +110,8 @@
                 android:gravity="center"
                 android:textSize="16dp"
                 android:ems="10"
-                android:inputType="number"
-                android:text="1000"/>
+                android:inputType="text"
+                android:hint="Password"/>
 
         </RelativeLayout>
 
@@ -127,18 +125,28 @@
             android:layout_gravity="bottom"
             android:id="@+id/buttonLayout">
 
-        <Button
-            android:id="@+id/search"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="20dp"
-            android:elevation="5dp"
-            android:text="Navigate"
-            android:onClick="goForSearch"
-            android:textColor="@color/snow"
-            android:background="@drawable/custom_main_button"/>
+            <Button
+                android:id="@+id/login"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="20dp"
+                android:elevation="5dp"
+                android:text="Login"
+                android:onClick="loginUser"
+                android:textColor="@color/snow"
+                android:background="@drawable/custom_main_button"/>
 
         </RelativeLayout>
+
+        <TextView
+            android:id="@+id/txtRegister"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:paddingTop="10dp"
+            android:textSize="12dp"
+            android:onClick="registerUser"
+            android:textColor="@color/maincolor"/>
 
     </LinearLayout>
 

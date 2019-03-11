@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "534158823805",
+    "firebase_url": "https://tese-233008.firebaseio.com",
+    "project_id": "tese-233008",
+    "storage_bucket": "tese-233008.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:534158823805:android:eea793ae5661c374",
+        "android_client_info": {
+          "package_name": "com.tese.parkaid"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "534158823805-r69nadra7g0id2pai4rpbffds3f6aegm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC27tatLXw0BIjtOht3h171gdEoEadFieo"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
