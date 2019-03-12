@@ -4,179 +4,205 @@
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingTop="40dp"
+    android:paddingTop="80dp"
     android:background="@drawable/background"
     android:orientation="vertical">
 
-    <ImageView
-        android:id="@+id/icon"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_gravity="center"
-        android:background="@drawable/parking"
-        android:layout_marginTop="20dp"
-        android:layout_centerHorizontal="true"/>
+    <ScrollView
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:orientation="vertical">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="ParkAid"
-        android:textColor="@color/snow"
-        android:textSize="27dp"
-        android:textStyle="bold" />
-
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        android:paddingTop="20dp"
-        android:paddingBottom="40dp"
-        android:layout_marginRight="15dp"
-        android:layout_marginLeft="15dp"
-        android:orientation="vertical"
-        android:elevation="10dp"
-        android:background="@drawable/custom_pop_background">
-
-        <TextView
-            android:id="@+id/txtUsername"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_marginLeft="10dp"
-            android:gravity="center"
-            android:textStyle="bold"
-            android:text="Username:"
-            android:textSize="16dp"
-            android:textColor="@color/maincolor"/>
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginRight="5dp"
-            android:layout_marginLeft="5dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="20dp"
+            android:layout_marginRight="15dp"
+            android:layout_marginLeft="15dp"
+            android:orientation="vertical"
             android:elevation="10dp"
-            android:layout_gravity="bottom"
-            android:background="@drawable/custom_border"
-            android:id="@+id/usernameLayout">
+            android:background="@drawable/custom_pop_background">
 
-            <EditText
-                android:id="@+id/username"
-                android:textColor="@color/maincolor"
+            <TextView
+                android:id="@+id/txtUsername"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@null"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginLeft="10dp"
                 android:gravity="center"
+                android:textStyle="bold"
+                android:text="Username:"
                 android:textSize="16dp"
-                android:hint="Username"
-                android:ems="10"
-                android:inputType="text"/>
+                android:textColor="@color/maincolor"/>
 
-        </RelativeLayout>
-
-        <TextView
-            android:id="@+id/txtPassword"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_marginLeft="10dp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:text="Password:"
-            android:textSize="16dp"
-            android:textColor="@color/maincolor"/>
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="0dp"
-            android:layout_marginRight="5dp"
-            android:layout_marginLeft="5dp"
-            android:elevation="10dp"
-            android:layout_gravity="bottom"
-            android:background="@drawable/custom_border"
-            android:id="@+id/passwordLayout">
-
-            <EditText
-                android:id="@+id/password"
-                android:textColor="@color/maincolor"
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@null"
+                android:layout_height="50dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:elevation="10dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/custom_border"
+                android:id="@+id/usernameLayout">
+
+                <EditText
+                    android:id="@+id/username"
+                    android:textColor="@color/maincolor"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@null"
+                    android:gravity="center"
+                    android:textSize="16dp"
+                    android:hint="Username"
+                    android:ems="10"
+                    android:inputType="text"/>
+
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/txtEmail"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginLeft="10dp"
                 android:gravity="center"
+                android:textStyle="bold"
+                android:text="Email:"
                 android:textSize="16dp"
-                android:ems="10"
-                android:inputType="text"
-                android:hint="Password"/>
+                android:textColor="@color/maincolor"/>
 
-        </RelativeLayout>
-
-        <TextView
-            android:id="@+id/txtConfirmPassword"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_marginLeft="10dp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:text="Confirm password:"
-            android:textSize="16dp"
-            android:textColor="@color/maincolor"/>
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="0dp"
-            android:layout_marginRight="5dp"
-            android:layout_marginLeft="5dp"
-            android:elevation="10dp"
-            android:layout_gravity="bottom"
-            android:background="@drawable/custom_border"
-            android:id="@+id/confirmPasswordLayout">
-
-            <EditText
-                android:id="@+id/confirmPassword"
-                android:textColor="@color/maincolor"
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@null"
+                android:layout_height="50dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:elevation="10dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/custom_border"
+                android:id="@+id/emailLayout">
+
+                <EditText
+                    android:id="@+id/email"
+                    android:textColor="@color/maincolor"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@null"
+                    android:gravity="center"
+                    android:textSize="16dp"
+                    android:hint="Email"
+                    android:ems="10"
+                    android:inputType="textEmailAddress"/>
+
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/txtPassword"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginLeft="10dp"
+                android:textStyle="bold"
                 android:gravity="center"
+                android:text="Password:"
                 android:textSize="16dp"
-                android:ems="10"
-                android:inputType="text"
-                android:hint="Confirm password"/>
+                android:textColor="@color/maincolor"/>
 
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="70dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="5dp"
-            android:layout_marginLeft="5dp"
-            android:elevation="10dp"
-            android:layout_gravity="bottom"
-            android:id="@+id/buttonLayout">
-
-            <Button
-                android:id="@+id/login"
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="20dp"
-                android:elevation="5dp"
-                android:text="Register"
-                android:onClick="registerUser"
-                android:textColor="@color/snow"
-                android:background="@drawable/custom_main_button"/>
+                android:layout_height="50dp"
+                android:layout_marginTop="0dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:elevation="10dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/custom_border"
+                android:id="@+id/passwordLayout">
 
-        </RelativeLayout>
+                <EditText
+                    android:id="@+id/password"
+                    android:textColor="@color/maincolor"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@null"
+                    android:gravity="center"
+                    android:textSize="16dp"
+                    android:ems="10"
+                    android:inputType="textPassword"
+                    android:hint="Password"/>
 
-    </LinearLayout>
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/txtConfirmPassword"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginLeft="10dp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:text="Confirm password:"
+                android:textSize="16dp"
+                android:textColor="@color/maincolor"/>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="0dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:elevation="10dp"
+                android:layout_gravity="bottom"
+                android:background="@drawable/custom_border"
+                android:id="@+id/confirmPasswordLayout">
+
+                <EditText
+                    android:id="@+id/confirmPassword"
+                    android:textColor="@color/maincolor"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@null"
+                    android:gravity="center"
+                    android:textSize="16dp"
+                    android:ems="10"
+                    android:inputType="textPassword"
+                    android:hint="Confirm password"/>
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:elevation="10dp"
+                android:layout_gravity="bottom"
+                android:id="@+id/buttonLayout">
+
+                <Button
+                    android:id="@+id/buttonRegister"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="20dp"
+                    android:elevation="5dp"
+                    android:text="Register"
+                    android:onClick="registerUser"
+                    android:textColor="@color/snow"
+                    android:background="@drawable/custom_main_button"/>
+
+            </RelativeLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
 
 
 </LinearLayout>

@@ -16,16 +16,23 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Html;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+
+import org.w3c.dom.Text;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -46,6 +53,8 @@ public class Menu extends AppCompatActivity {
     FirebaseStorage storage = FirebaseStorage.getInstance();
     StorageReference storageRef = storage.getReference().child("images");
 
+    private FirebaseAuth mAuth;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,6 +63,13 @@ public class Menu extends AppCompatActivity {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         getLocation();
+        fillUserPoints();
+    }
+
+    private void fillUserPoints(){
+        View includeLayout = findViewById(R.id.custom_userpoints);
+        TextView userPoints = (TextView) includeLayout.findViewById(R.id.userpoints);
+        userPoints.setText(Html.fromHtml("<b>" + Constants.getUsername() + "</b> - " + Constants.getUserPoints() + " points"));
     }
 
     public void checkMap(View view) {
@@ -178,7 +194,11 @@ public class Menu extends AppCompatActivity {
     }
 
     private void incrementPointsToUser(){
-
+        mAuth = FirebaseAuth.getInstance();
+        DatabaseReference myRef = FirebaseDatabase.getInstance().getReference().child("users").child(mAuth.getCurrentUser().getEmail().replace(".", ""));
+        Constants.incrementUserPoints();
+        myRef.child("points").setValue(Constants.getUserPoints());
+        fillUserPoints();
     }
 
     private Location getLastKnownLocation() {

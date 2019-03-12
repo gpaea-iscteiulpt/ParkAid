@@ -14,8 +14,10 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -50,7 +52,6 @@ public class Home extends AppCompatActivity implements GoogleApiClient.OnConnect
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-
         if (!Places.isInitialized()) {
             Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));
         }
@@ -75,7 +76,13 @@ public class Home extends AppCompatActivity implements GoogleApiClient.OnConnect
                 Toast.makeText(Home.this, status.getStatusMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+        fillUserPoints();
+    }
 
+    private void fillUserPoints(){
+        View includeLayout = findViewById(R.id.custom_userpoints);
+        TextView userPoints = (TextView) includeLayout.findViewById(R.id.userpoints);
+        userPoints.setText(Html.fromHtml("<b>" + Constants.getUsername() + "</b> - " + Constants.getUserPoints() + " points"));
     }
 
     public void goForSearch(View view){
@@ -89,10 +96,7 @@ public class Home extends AppCompatActivity implements GoogleApiClient.OnConnect
         startActivity(intent);
     }
 
-
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) { }
 
 }

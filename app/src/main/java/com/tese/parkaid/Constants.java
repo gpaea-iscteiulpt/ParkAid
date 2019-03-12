@@ -1,5 +1,8 @@
 package com.tese.parkaid;
 
+import android.view.View;
+import android.widget.TextView;
+
 public class Constants {
 
     public static final int ERROR_DIALOG_REQUEST = 9001;
@@ -21,8 +24,12 @@ public class Constants {
         USERNAME = str;
     }
 
-    public static void setUserPoints(int value){
-        USER_POINTS = value;
-    }
+    public static void setUserPoints(int value){ USER_POINTS = value; }
+
+    public static void incrementUserPoints(){ USER_POINTS += 10; }
+
+    public static String getUsername(){ return USERNAME; }
+
+    public static int getUserPoints(){ return USER_POINTS; }
 
 }

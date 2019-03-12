@@ -15,7 +15,7 @@
         android:layout_height="100dp"
         android:layout_gravity="center"
         android:background="@drawable/parking"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="80dp"
         android:layout_centerHorizontal="true"/>
 
     <TextView
@@ -68,7 +68,7 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="80dp"
-            android:layout_marginTop="0dp"
+            android:layout_marginTop="-10dp"
             android:layout_marginRight="5dp"
             android:layout_marginLeft="5dp"
             android:elevation="10dp"
@@ -91,7 +91,7 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="80dp"
-            android:layout_marginTop="0dp"
+            android:layout_marginTop="-10dp"
             android:layout_marginRight="5dp"
             android:layout_marginLeft="5dp"
             android:elevation="10dp"
