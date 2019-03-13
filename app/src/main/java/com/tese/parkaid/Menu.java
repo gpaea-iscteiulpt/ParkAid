@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -26,8 +27,11 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -35,6 +39,8 @@ import com.google.firebase.storage.UploadTask;
 import org.w3c.dom.Text;
 
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static android.location.LocationManager.GPS_PROVIDER;
@@ -50,10 +56,12 @@ public class Menu extends AppCompatActivity {
     private LocationManager mLocationManager;
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
-    FirebaseStorage storage = FirebaseStorage.getInstance();
-    StorageReference storageRef = storage.getReference().child("images");
+    private StorageReference storageRef;
 
     private FirebaseAuth mAuth;
+    private DatabaseReference mDatabase;
+
+    private ArrayList<Park> mParks = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,9 +69,35 @@ public class Menu extends AppCompatActivity {
         setContentView(R.layout.activity_menu);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
+        storageRef = FirebaseStorage.getInstance().getReference();
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+        fillParks();
         getLocation();
         fillUserPoints();
+    }
+
+    private void fillParks() {
+        mDatabase.child("parks").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
+                    Park mPark = postSnapshot.getValue(Park.class);
+                    if(mPark.getName().equals("Red Park")){
+                        mPark.setIconPicture(R.drawable.parkinghalf);
+                    } else if(mPark.getName().equals("Blue Park")) {
+                        mPark.setIconPicture(R.drawable.parkingfull);
+                    } else {
+                        mPark.setIconPicture(R.drawable.parkingfree);
+                    }
+                    mParks.add(mPark);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                showMessage("Error accessing database.");
+            }
+        });
     }
 
     private void fillUserPoints(){
@@ -76,12 +110,14 @@ public class Menu extends AppCompatActivity {
         Intent intent = new Intent(this, Maps.class);
         intent.putExtra("LastLocation", mLastLocation);
         intent.putExtra("WhereFrom", "FromMap");
+        intent.putExtra("Parks", mParks);
         startActivity(intent);
     }
 
     public void checkNavigate(View view){
         Intent intent = new Intent(this, Home.class);
         intent.putExtra("LastLocation", mLastLocation);
+        intent.putExtra("Parks", mParks);
         startActivity(intent);
     }
 
@@ -171,23 +207,23 @@ public class Menu extends AppCompatActivity {
                 break;
             case REQUEST_IMAGE_CAPTURE:
                 if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-                    Bitmap imageBitmap = (Bitmap) data.getExtras().get("data");;
+                    showMessage("Uploading image...");
+                    StorageReference filepath = storageRef.child("Photos");
+
+                    Bundle extras = data.getExtras();
+                    Bitmap imageBitmap = (Bitmap) extras.get("data");
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-                    byte[] dataByte = baos.toByteArray();
+                    byte[] byteArray = baos.toByteArray();
 
-                    storageRef.putBytes(dataByte).addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception exception) {
-                            Toast.makeText(Menu.this, "Error uploading the photo.", Toast.LENGTH_LONG).show();
-                        }
-                    }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    filepath.putBytes(byteArray).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                         @Override
                         public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                            Toast.makeText(Menu.this, "Upload successfully completed!", Toast.LENGTH_LONG).show();
                             incrementPointsToUser();
+                            showMessage("Upload successful!");
                         }
                     });
+
                 }
                 break;
         }
@@ -218,6 +254,10 @@ public class Menu extends AppCompatActivity {
             }
         }
         return bestLocation;
+    }
+
+    private void showMessage(String str){
+        Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
     }
 
 }

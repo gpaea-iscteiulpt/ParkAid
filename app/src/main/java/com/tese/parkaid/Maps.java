@@ -18,6 +18,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
@@ -50,6 +51,11 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.libraries.places.api.model.Place;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.PendingResult;
@@ -67,6 +73,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 
 public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnPolylineClickListener, GoogleMap.OnInfoWindowClickListener{
 
@@ -77,11 +85,11 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private LatLngBounds mMapBoundary;
     private GeoApiContext mGeoApiContext = null;
 
-    private ArrayList<Park> mParks = new ArrayList<>();
     private ArrayList<PolylineData> mPolylinesData = new ArrayList<>();
     private Marker mMarkerSelected = null;
     private ArrayList<Marker> mTripMarkers = new ArrayList<>();
     private ArrayList<Marker> mMarkersArray = new ArrayList<>();
+    private ArrayList<Park> mParks = new ArrayList<>();
 
     private String mWhereFrom;
     private Place mDestinationPlace;
@@ -91,6 +99,8 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
     private Weather mCurrentWeather;
     private Date mCurrentDateAndTime;
+
+    private DatabaseReference mDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,7 +112,9 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         URL weatherUrl = WeatherApi.buildUrlWeather();
         new JsonTask().execute(weatherUrl);
 
+        mDatabase = FirebaseDatabase.getInstance().getReference();
         mCurrentDateAndTime = Calendar.getInstance().getTime();
+        mParks = (ArrayList<Park>) getIntent().getExtras().getSerializable("Parks");
 
         Button btReset = (Button) findViewById(R.id.btReset);
         btReset.setOnClickListener(new View.OnClickListener() {
@@ -122,9 +134,9 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
         mLocation = (Location) getIntent().getParcelableExtra("LastLocation");
         mWhereFrom = (String) getIntent().getStringExtra("WhereFrom");
+
         startLocationService();
         addMapMarkers();
 
@@ -198,7 +210,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         mClosestDistance = 0;
 
         for(Park park : mParks) {
-            Location.distanceBetween(park.getLocation().latitude, park.getLocation().longitude,
+            Location.distanceBetween(park.getLatitude(), park.getLongitude(),
                     circle.getCenter().latitude, circle.getCenter().longitude, distance);
 
             if (distance[0] < circle.getRadius() && (lessDistance > distance[0] || lessDistance == 0)) {
@@ -214,17 +226,12 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         return lessDistance;
     }
 
-    private void fillParks() {
-        mParks.add(new Park("Park 1", "Descrição 1", new LatLng(38.740684, -9.227912), "Lisboa", 75, 1, 100, "Seg-Dom", "6:00h-23:00h", R.drawable.parking));
-        mParks.add(new Park("Park 2", "Descrição 2", new LatLng(38.734170, -9.223449), "Lisboa", 90, 2, 150, "Seg-Dom", "6:00h-23:00h", R.drawable.parking));
-    }
-
     private void setCameraView(Location loc) {
 
-        double bottomBoundary = loc.getLatitude() - .1;
-        double leftBoundary = loc.getLongitude() - .1;
-        double topBoundary = loc.getLatitude() + .1;
-        double rightBoundary = loc.getLongitude() + .1;
+        double bottomBoundary = loc.getLatitude() - .01;
+        double leftBoundary = loc.getLongitude() - .01;
+        double topBoundary = loc.getLatitude() + .01;
+        double rightBoundary = loc.getLongitude() + .01;
 
         mMapBoundary = new LatLngBounds(new LatLng(bottomBoundary, leftBoundary), new LatLng(topBoundary, rightBoundary));
 
@@ -235,13 +242,11 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(mMapBoundary, 0));
     }
 
-
     private void addMapMarkers(){
-        fillParks();
         for (Park park : mParks) {
             Bitmap b = BitmapFactory.decodeResource(getResources(), park.getIconPicture());
-            Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/14,b.getHeight()/14, false);
-            Marker marker = mMap.addMarker(new MarkerOptions().position(park.getLocation()).title(park.getName()).icon(BitmapDescriptorFactory.fromBitmap(icon)));
+            Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/5,b.getHeight()/5, false);
+            Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(park.getLatitude(), park.getLongitude())).title(park.getName()).icon(BitmapDescriptorFactory.fromBitmap(icon)));
             marker.setTag(park);
             mMarkersArray.add(marker);
         }
@@ -321,8 +326,6 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             address.setText(mPark.getAddress());
             TextView occupancy = (TextView) popupView.findViewById(R.id.occupancy);
             occupancy.setText(mPark.getOccupancyPercentage() + "%");
-            ImageView photo = (ImageView) popupView.findViewById(R.id.photo);
-            photo.setImageResource(mPark.getPhoto());
             TextView hours = (TextView) popupView.findViewById(R.id.hours);
             hours.setText(mPark.getWorkHours());
             TextView period = (TextView) popupView.findViewById(R.id.period);
@@ -331,7 +334,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             price.setText(mPark.getPricePerHour() + "€ p/h");
 
             Button go = (Button) popupView.findViewById(R.id.go);
-            String tempString = "Go to location";
+            String tempString = "Navigate";
             SpannableString spanString = new SpannableString(tempString);
             spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, spanString.length(), 0);
             go.setText(spanString);
@@ -560,8 +563,10 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
             return mCurrentWeather;
         }
+    }
 
-
+    private void showMessage(String str){
+        Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
     }
 
 }

@@ -3,6 +3,8 @@ package com.tese.parkaid;
 import android.view.View;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+
 public class Constants {
 
     public static final int ERROR_DIALOG_REQUEST = 9001;
@@ -31,5 +33,6 @@ public class Constants {
     public static String getUsername(){ return USERNAME; }
 
     public static int getUserPoints(){ return USER_POINTS; }
+
 
 }
