@@ -10,6 +10,8 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
@@ -27,6 +29,7 @@ public class Register extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
     private User mUser;
+    private DatabaseReference mDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +44,7 @@ public class Register extends AppCompatActivity {
         buttonRegister = findViewById(R.id.buttonRegister);
 
         mAuth = FirebaseAuth.getInstance();
+        mDatabase = FirebaseDatabase.getInstance().getReference();
 
         buttonRegister.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -69,9 +73,6 @@ public class Register extends AppCompatActivity {
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if(task.isSuccessful()){
                     updateUserInfo(username, email, mAuth.getCurrentUser());
-                    Intent intent = new Intent(getApplicationContext(), Login.class);
-                    startActivity(intent);
-                    showMessage("Account was created!");
                 }else{
                     showMessage("Error: " + task.getException().getMessage());
                 }
@@ -79,12 +80,25 @@ public class Register extends AppCompatActivity {
         });
     }
 
-    private void updateUserInfo(String username, String email, FirebaseUser currentUser){
-        DatabaseReference myRef = FirebaseDatabase.getInstance().getReference("users");
-        myRef.child(email.replace(".", "")).setValue(mUser);
-        UserProfileChangeRequest profileUpdate = new UserProfileChangeRequest.Builder()
-                .setDisplayName(username).build();
-        currentUser.updateProfile(profileUpdate);
+    private void updateUserInfo(final String username, String email, final FirebaseUser currentUser){
+        mDatabase.child("users").child(email.replace(".", "")).setValue(mUser)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    UserProfileChangeRequest profileUpdate = new UserProfileChangeRequest.Builder()
+                            .setDisplayName(username).build();
+                    currentUser.updateProfile(profileUpdate);
+                    Intent intent = new Intent(getApplicationContext(), Login.class);
+                    startActivity(intent);
+                    showMessage("Account was created!");
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    showMessage("Error creating the account.");
+                }
+            });
+
     }
 
     private void showMessage(String str){

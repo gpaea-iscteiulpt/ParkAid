@@ -28,6 +28,7 @@ public class Login extends AppCompatActivity {
     private Button buttonLogin;
 
     private FirebaseAuth mAuth;
+    private DatabaseReference mDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +44,7 @@ public class Login extends AppCompatActivity {
         buttonLogin = findViewById(R.id.login);
 
         mAuth = FirebaseAuth.getInstance();
+        mDatabase = FirebaseDatabase.getInstance().getReference();
 
         buttonLogin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -65,13 +67,13 @@ public class Login extends AppCompatActivity {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if(task.isSuccessful()){
-                    DatabaseReference myRef = FirebaseDatabase.getInstance().getReference("users").child(email.replace(".", ""));
-                    myRef.addValueEventListener(new ValueEventListener() {
+                    mDatabase.child("users").child(email.replace(".", "")).addValueEventListener(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                             User mUser = dataSnapshot.getValue(User.class);
                             Constants.setUsername(mUser.getUsername());
                             Constants.setUserPoints(mUser.getPoints());
+                            updateUi();
                         }
 
                         @Override
@@ -79,8 +81,6 @@ public class Login extends AppCompatActivity {
                             showMessage("Error accessing database.");
                         }
                     });
-
-                    updateUi();
                 }else{
                     showMessage("Login failed! " + task.getException().getMessage());
                 }

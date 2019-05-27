@@ -33,6 +33,7 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -46,6 +47,7 @@ public class Home extends AppCompatActivity implements GoogleApiClient.OnConnect
     private static final String TAG = Home.class.getSimpleName();
     private Location mLastLocation;
     private Place mDestinationPlace;
+    public ArrayList<Park> mParks = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +59,7 @@ public class Home extends AppCompatActivity implements GoogleApiClient.OnConnect
         }
 
         mLastLocation = (Location) getIntent().getParcelableExtra("LastLocation");
+        mParks = (ArrayList<Park>) getIntent().getExtras().getSerializable("Parks");
 
         PlacesClient placesClient = Places.createClient(this);
 
@@ -90,6 +93,7 @@ public class Home extends AppCompatActivity implements GoogleApiClient.OnConnect
         intent.putExtra("LastLocation", mLastLocation);
         intent.putExtra("WhereFrom", "FromSearch");
         intent.putExtra("DestinationPlace", mDestinationPlace);
+        intent.putExtra("Parks", mParks);
         EditText radius = (EditText) findViewById(R.id.searchRadius);
         Constants.setSearchRadius(Integer.parseInt(radius.getText().toString()));
         intent.putExtra("Radius", Constants.SEARCH_RADIUS);

@@ -2,47 +2,53 @@ package com.tese.parkaid;
 
 import com.google.android.gms.maps.model.LatLng;
 
-public class Park {
+import java.io.Serializable;
+
+public class Park implements Serializable {
 
     private String name;
     private String description;
     private int iconPicture;
     private int occupancyPercentage;
-    private double pricePerHour;
-    private int totalSlots;
-    private String workPeriod;
-    private String workHours;
-    private LatLng location;
+    private double priceperhour;
+    private int totalslots;
+    private String workperiod;
+    private String workhours;
+    private double latitude;
+    private double longitude;
     private String address;
-    private int photo;
 
-    public Park(String name, String description, LatLng location, String address, int occupancyPercentage, double pricePerHour, int totalSlots, String workPeriod, String workHours, int photo) {
-        this.name = name;
-        this.description = description;
-        this.location = location;
-        this.address = address;
-        this.photo = photo;
-        if(occupancyPercentage >= 85){
-            iconPicture = R.drawable.parkingfull;
-        }else if(occupancyPercentage < 85 & occupancyPercentage >= 50){
-            iconPicture = R.drawable.parkinghalf;
-        }else{
-            iconPicture = R.drawable.parkingfree;
-        }
-        this.occupancyPercentage = occupancyPercentage;
-        this.pricePerHour = pricePerHour;
-        this.totalSlots = totalSlots;
-        this.workPeriod = workPeriod;
-        this.workHours = workHours;
-    }
-
-    public int getPhoto() {
-        return photo;
-    }
-
-    public void setPhoto(int photo) {
-        this.photo = photo;
-    }
+//    public Park(String name, String description, long latitude, long longitude, String address, double pricePerHour, int totalSlots, String workPeriod, String workHours) {
+//        this.name = name;
+//        this.description = description;
+//        this.latitude = latitude;
+//        this.longitude = longitude;
+//        this.address = address;
+//        this.pricePerHour = pricePerHour;
+//        this.totalSlots = totalSlots;
+//        this.workPeriod = workPeriod;
+//        this.workHours = workHours;
+//    }
+//
+//    public Park(String name, String description, long latitude, long longitude, String address, int occupancyPercentage, double pricePerHour, int totalSlots, String workPeriod, String workHours) {
+//        this.name = name;
+//        this.description = description;
+//        this.latitude = latitude;
+//        this.longitude = longitude;
+//        this.address = address;
+//        if(occupancyPercentage >= 85){
+//            iconPicture = R.drawable.parkingfull;
+//        }else if(occupancyPercentage < 85 & occupancyPercentage >= 50){
+//            iconPicture = R.drawable.parkinghalf;
+//        }else{
+//            iconPicture = R.drawable.parkingfree;
+//        }
+//        this.occupancyPercentage = occupancyPercentage;
+//        this.pricePerHour = pricePerHour;
+//        this.totalSlots = totalSlots;
+//        this.workPeriod = workPeriod;
+//        this.workHours = workHours;
+//    }
 
     public String getAddress() {
         return address;
@@ -85,43 +91,50 @@ public class Park {
     }
 
     public double getPricePerHour() {
-        return pricePerHour;
+        return priceperhour;
     }
 
     public void setPricePerHour(double pricePerHour) {
-        this.pricePerHour = pricePerHour;
+        this.priceperhour = pricePerHour;
     }
 
     public int getTotalSlots() {
-        return totalSlots;
+        return totalslots;
     }
 
     public void setTotalSlots(int totalSlots) {
-        this.totalSlots = totalSlots;
+        this.totalslots = totalSlots;
     }
 
     public String getWorkPeriod() {
-        return workPeriod;
+        return workperiod;
     }
 
     public void setWorkPeriod(String workPeriod) {
-        this.workPeriod = workPeriod;
+        this.workperiod = workPeriod;
     }
 
     public String getWorkHours() {
-        return workHours;
+        return workhours;
     }
 
     public void setWorkHours(String workHours) {
-        this.workHours = workHours;
+        this.workhours = workHours;
     }
 
-    public LatLng getLocation() {
-        return location;
+    public double getLatitude() {
+        return latitude;
     }
 
-    public void setLocation(LatLng location) {
-        this.location = location;
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
     }
 
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
 }
