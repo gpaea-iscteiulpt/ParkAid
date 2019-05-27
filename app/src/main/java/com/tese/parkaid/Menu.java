@@ -26,8 +26,11 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -35,6 +38,7 @@ import com.google.firebase.storage.UploadTask;
 import org.w3c.dom.Text;
 
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import static android.location.LocationManager.GPS_PROVIDER;
@@ -54,6 +58,9 @@ public class Menu extends AppCompatActivity {
     StorageReference storageRef = storage.getReference().child("images");
 
     private FirebaseAuth mAuth;
+    private DatabaseReference mDatabase;
+
+    private ArrayList<Park> mParks = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,9 +68,29 @@ public class Menu extends AppCompatActivity {
         setContentView(R.layout.activity_menu);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        storageRef = FirebaseStorage.getInstance().getReference();
+        mDatabase = FirebaseDatabase.getInstance().getReference();
 
+        fillParks();
         getLocation();
         fillUserPoints();
+    }
+
+    private void fillParks() {
+        mDatabase.child("parks").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
+                    Park mStation = postSnapshot.getValue(Park.class);
+                    mParks.add(mStation);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                showMessage("Error accessing database.");
+            }
+        });
     }
 
     private void fillUserPoints(){
@@ -76,12 +103,14 @@ public class Menu extends AppCompatActivity {
         Intent intent = new Intent(this, Maps.class);
         intent.putExtra("LastLocation", mLastLocation);
         intent.putExtra("WhereFrom", "FromMap");
+        intent.putExtra("Parks", mParks);
         startActivity(intent);
     }
 
     public void checkNavigate(View view){
         Intent intent = new Intent(this, Home.class);
         intent.putExtra("LastLocation", mLastLocation);
+        intent.putExtra("Parks", mParks);
         startActivity(intent);
     }
 
@@ -218,6 +247,10 @@ public class Menu extends AppCompatActivity {
             }
         }
         return bestLocation;
+    }
+
+    private void showMessage(String str){
+        Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
     }
 
 }

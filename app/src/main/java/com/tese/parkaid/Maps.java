@@ -50,6 +50,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.libraries.places.api.model.Place;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.PendingResult;
@@ -66,6 +68,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnPolylineClickListener, GoogleMap.OnInfoWindowClickListener{
@@ -88,9 +91,14 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private Location mLocation;
     private Park mClosestPark;
     private float mClosestDistance;
+    private double mTimeToDestination;
 
     private Weather mCurrentWeather;
     private Date mCurrentDateAndTime;
+    public HashMap<String, SnippetInformation> mPolylineInformation = new HashMap<String, SnippetInformation>();
+    private DecisionFactor mDecisionFactor;
+
+    private DatabaseReference mDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,10 +107,12 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        URL weatherUrl = WeatherApi.buildUrlWeather();
-        new JsonTask().execute(weatherUrl);
+//        URL weatherUrl = WeatherApi.buildUrlWeather();
+//        new JsonTask().execute(weatherUrl);
 
+        mDatabase = FirebaseDatabase.getInstance().getReference();
         mCurrentDateAndTime = Calendar.getInstance().getTime();
+        mParks = (ArrayList<Park>) getIntent().getExtras().getSerializable("Parks");
 
         Button btReset = (Button) findViewById(R.id.btReset);
         btReset.setOnClickListener(new View.OnClickListener() {
@@ -123,8 +133,14 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        mLocation = (Location) getIntent().getParcelableExtra("LastLocation");
+        //mLocation = (Location) getIntent().getParcelableExtra("LastLocation");
+        Location newLocation = new Location("Sintra");
+        newLocation.setLatitude(38.787288);
+        newLocation.setLongitude(-9.373206);
+        mLocation = newLocation;
+
         mWhereFrom = (String) getIntent().getStringExtra("WhereFrom");
+
         startLocationService();
         addMapMarkers();
 
@@ -141,19 +157,26 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     }
 
     private void prepareNavigate(){
-        int mSearchRadius = (int) getIntent().getIntExtra("Radius", 50);
+        int mSearchRadius = (int) getIntent().getIntExtra("Radius", 500);
         mDestinationPlace = (Place) getIntent().getParcelableExtra("DestinationPlace");
         Marker newMarker = mMap.addMarker(new MarkerOptions().position(mDestinationPlace.getLatLng()).title(mDestinationPlace.getId()));
         newMarker.setTag("Destination");
-        Location temp = new Location(LocationManager.GPS_PROVIDER);
-        temp.setLatitude(mDestinationPlace.getLatLng().latitude);
-        temp.setLongitude(mDestinationPlace.getLatLng().longitude);
+
+        Location mDestination = new Location(LocationManager.GPS_PROVIDER);
+        mDestination.setLatitude(mDestinationPlace.getLatLng().latitude);
+        mDestination.setLongitude(mDestinationPlace.getLatLng().longitude);
 
         Circle circle = mMap.addCircle(new CircleOptions()
                 .center(newMarker.getPosition())
                 .radius(mSearchRadius)
                 .strokeColor(getColor(R.color.circleStrokeBlue))
                 .fillColor(getColor(R.color.circleInsideBlue)));
+
+        mDecisionFactor = checkBestStation(mDestination);
+        mClosestDistance = (float) mDecisionFactor.getDistance();
+        mMarkerSelected = mDecisionFactor.getMarker();
+        mTimeToDestination = mDecisionFactor.getDuration();
+
 
         float lessDistance = checkParkInsideRadius(circle);
         if(lessDistance > 0) {
@@ -189,7 +212,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             AlertDialog alertDialog = builder.create();
             alertDialog.show();
         }
-        setCameraView(temp);
+        setCameraView(mDestination);
     }
 
     private float checkParkInsideRadius(Circle circle){
@@ -214,9 +237,111 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         return lessDistance;
     }
 
-    private void fillParks() {
-        mParks.add(new Park("Park 1", "Descrição 1", new LatLng(38.740684, -9.227912), "Lisboa", 75, 1, 100, "Seg-Dom", "6:00h-23:00h", R.drawable.parking));
-        mParks.add(new Park("Park 2", "Descrição 2", new LatLng(38.734170, -9.223449), "Lisboa", 90, 2, 150, "Seg-Dom", "6:00h-23:00h", R.drawable.parking));
+
+    private DecisionFactor checkBestStation(Location mDestination){
+
+        ArrayList<DecisionFactor> decisionFactors = new ArrayList<DecisionFactor>();
+
+        for(Marker marker : mMarkersArray) {
+
+            Location parkingLotLocation = new Location("ParkingLotLocation");
+            parkingLotLocation.setLatitude(marker.getPosition().latitude);
+            parkingLotLocation.setLongitude(marker.getPosition().longitude);
+            double distance = mLocation.distanceTo(parkingLotLocation);
+
+            double distanceDestinationToPL = mDestination.distanceTo(parkingLotLocation);
+
+            //Adicionar aqui os modelos de previsão.
+            double randomDouble = Math.random();
+            randomDouble = randomDouble * 50 + 1;
+
+            double duration = getDurationToMarker(marker);
+
+            decisionFactors.add(new DecisionFactor(duration, randomDouble, distance, distanceDestinationToPL, marker));
+        }
+
+        return returnBestMarker(decisionFactors);
+    }
+
+    public DecisionFactor returnBestMarker(ArrayList<DecisionFactor> decisionFactors){
+
+        double maxDuration = 0;
+        double maxDistanceDestinationToCs = 0;
+        for(int i = 0; i < decisionFactors.size() - 1; i++) {
+
+            DecisionFactor df1 = decisionFactors.get(i);
+            DecisionFactor df2 = decisionFactors.get(i+1);
+
+            if(df1.getDuration() > df2.getDuration()){
+                maxDuration = df1.getDuration();
+            }else{
+                maxDuration = df2.getDuration();
+            }
+
+            if(df1.getDistanceDestinationToPL() > df2.getDistanceDestinationToPL()){
+                maxDistanceDestinationToCs = df1.getDistanceDestinationToPL();
+            }else{
+                maxDistanceDestinationToCs = df2.getDistanceDestinationToPL();
+            }
+        }
+
+        for(DecisionFactor df : decisionFactors) {
+            df.setWeight(((100 - df.getOccupancy()) * 0.5) + (100 - ((df.getDuration() * 100) / maxDuration) * 0.3) + (100 - ((df.getDistanceDestinationToPL() * 100) / maxDistanceDestinationToCs) * 0.2));
+        }
+
+        DecisionFactor temp = decisionFactors.get(0);
+        for(int i = 1; i<decisionFactors.size(); i++) {
+            DecisionFactor df1 = decisionFactors.get(i);
+            if(temp.getWeight() > df1.getWeight()){
+                temp = temp;
+            }else{
+                temp = df1;
+            }
+        }
+
+
+        return temp;
+    }
+
+    public double getDurationToMarker(Marker marker){
+        double duration = 999999;
+
+        String request = "https://maps.googleapis.com/maps/api/directions/json?origin=" + mLocation.getLatitude() + "," + mLocation.getLongitude() +
+                "&destination=" + marker.getPosition().latitude + "," + marker.getPosition().longitude + "&key=" + getString(R.string.google_maps_key);
+        StringBuffer response = new StringBuffer();
+        HttpInformation httpInfo = new HttpInformation(request, response);
+        new GetHttp().execute(httpInfo);
+        int ret = httpInfo.value;
+        double tempDuration = 0;
+        if (ret == 0) {
+            try {
+                JSONArray routes = new JSONObject(response.toString()).getJSONArray("routes");
+                tempDuration = getSmallestDuration(routes);
+                if(duration > tempDuration){
+                    duration = tempDuration;
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return duration;
+    }
+
+    private double getSmallestDuration(JSONArray routes){
+        double duration = 99999;
+        for(int i = 0; i<routes.length(); i++){
+            double tempDuration = 0;
+            try {
+                tempDuration = routes.getJSONObject(i).getJSONArray("legs").getJSONObject(0).getJSONObject("duration").getDouble("value");
+                if (tempDuration<duration){
+                    duration = tempDuration;
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return duration;
     }
 
     private void setCameraView(Location loc) {
@@ -237,7 +362,6 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
 
     private void addMapMarkers(){
-        fillParks();
         for (Park park : mParks) {
             Bitmap b = BitmapFactory.decodeResource(getResources(), park.getIconPicture());
             Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/14,b.getHeight()/14, false);
@@ -384,6 +508,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                         mLocation.getLongitude()
                 )
         );
+
         directions.destination(destination).setCallback(new PendingResult.Callback<DirectionsResult>() {
             @Override
             public void onResult(DirectionsResult result) {
@@ -395,6 +520,13 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 Log.e("Calculate", "onFailure: " + e.getMessage() );
             }
         });
+    }
+
+    public int getOccupancyLevel(){
+        //TODO Adicionar modelos de previsão;
+        double randomDouble = Math.random();
+        randomDouble = randomDouble * 75 + 1;
+        return (int) randomDouble;
     }
 
     private void addPolylinesToMap(final DirectionsResult result){
@@ -421,6 +553,9 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
                     Polyline polyline = mMap.addPolyline(new PolylineOptions().addAll(newDecodedPath));
 
+                    //TODO Adicionar método que gera a ocupação;
+                    mPolylineInformation.put(polyline.getId(), new SnippetInformation(20));
+
                     polyline.setClickable(true);
                     polyline.setColor(ContextCompat.getColor(Maps.this, R.color.grey));
                     mPolylinesData.add(new PolylineData(polyline, route.legs[0]));
@@ -436,6 +571,16 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 }
             }
         });
+    }
+
+    private int getDistanceBetweenTwoPoints(Marker selected){
+        Location destination = new Location("Point A");
+        destination.setLatitude(selected.getPosition().latitude);
+        destination.setLongitude(selected.getPosition().longitude);
+        Location currentLocation = new Location("Point B");
+        currentLocation.setLatitude(mLocation.getLatitude());
+        currentLocation.setLongitude(mLocation.getLongitude());
+        return Math.round(destination.distanceTo(currentLocation));
     }
 
     private void resetMap(){
@@ -460,9 +605,11 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 polylineData.getPolyline().setZIndex(1);
 
                 LatLng endLocation = new LatLng(polylineData.getLeg().endLocation.lat, polylineData.getLeg().endLocation.lng);
+                SnippetInformation info = mPolylineInformation.get(polyline.getId());
+                String snippetString = "Occupancy at ETA: " + info.ocuppancy + "%";
                 Marker marker = mMap.addMarker(new MarkerOptions().position(endLocation)
-                                        .title("Trip: #" + index)
-                                        .snippet("Duration: " + polylineData.getLeg().duration));
+                                        .title("Duration: " + polylineData.getLeg().duration)
+                                        .snippet(snippetString));
 
                 marker.showInfoWindow();
 
@@ -561,6 +708,20 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             return mCurrentWeather;
         }
 
+
+    }
+
+    private void showMessage(String str){
+        Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
+    }
+
+    public class SnippetInformation{
+
+        private int ocuppancy;
+
+        public SnippetInformation(int ocuppancy){
+            this.ocuppancy = ocuppancy;
+        }
 
     }
 
