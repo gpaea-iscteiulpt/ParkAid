@@ -9,17 +9,27 @@ public class DecisionFactor {
     public Marker marker;
     public double distance;
     public double distanceDestinationToPL;
+    public double pricePerHour;
     public double weight;
 
-    public DecisionFactor(double duration, double occupancy, double distance, double distanceDestinationToPL, Marker marker) {
+    public DecisionFactor(double duration, double occupancy, double pricePerHour, double distance, double distanceDestinationToPL, Marker marker) {
         this.duration = duration;
         this.occupancy = occupancy;
+        this.pricePerHour = pricePerHour;
         this.distanceDestinationToPL = distanceDestinationToPL;
         this.distance = distance;
         this.marker = marker;
     }
 
     public DecisionFactor() {
+    }
+
+    public double getPricePerHour() {
+        return pricePerHour;
+    }
+
+    public void setPricePerHour(double pricePerHour) {
+        this.pricePerHour = pricePerHour;
     }
 
     public void setDistance(double distance) {

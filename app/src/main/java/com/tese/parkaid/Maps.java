@@ -21,6 +21,7 @@ import android.os.Looper;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.res.ResourcesCompat;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
 import android.util.Log;
@@ -157,7 +158,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     }
 
     private void prepareNavigate(){
-        int mSearchRadius = (int) getIntent().getIntExtra("Radius", 500);
+        int mSearchRadius = (int) getIntent().getIntExtra("Radius", 1000);
         mDestinationPlace = (Place) getIntent().getParcelableExtra("DestinationPlace");
         Marker newMarker = mMap.addMarker(new MarkerOptions().position(mDestinationPlace.getLatLng()).title(mDestinationPlace.getId()));
         newMarker.setTag("Destination");
@@ -172,7 +173,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 .strokeColor(getColor(R.color.circleStrokeBlue))
                 .fillColor(getColor(R.color.circleInsideBlue)));
 
-        mDecisionFactor = checkBestStation(mDestination);
+        mDecisionFactor = checkBestPark(mDestination);
         mClosestDistance = (float) mDecisionFactor.getDistance();
         mMarkerSelected = mDecisionFactor.getMarker();
         mTimeToDestination = mDecisionFactor.getDuration();
@@ -221,7 +222,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         mClosestDistance = 0;
 
         for(Park park : mParks) {
-            Location.distanceBetween(park.getLocation().latitude, park.getLocation().longitude,
+            Location.distanceBetween(park.getLatitude(), park.getLongitude(),
                     circle.getCenter().latitude, circle.getCenter().longitude, distance);
 
             if (distance[0] < circle.getRadius() && (lessDistance > distance[0] || lessDistance == 0)) {
@@ -238,26 +239,26 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     }
 
 
-    private DecisionFactor checkBestStation(Location mDestination){
+    private DecisionFactor checkBestPark(Location mDestination){
 
         ArrayList<DecisionFactor> decisionFactors = new ArrayList<DecisionFactor>();
 
         for(Marker marker : mMarkersArray) {
-
+            Park tempPark = (Park) marker.getTag();
             Location parkingLotLocation = new Location("ParkingLotLocation");
             parkingLotLocation.setLatitude(marker.getPosition().latitude);
             parkingLotLocation.setLongitude(marker.getPosition().longitude);
             double distance = mLocation.distanceTo(parkingLotLocation);
-
+            double pricePerHour = tempPark.getPricePerHour();
             double distanceDestinationToPL = mDestination.distanceTo(parkingLotLocation);
 
-            //Adicionar aqui os modelos de previsão.
+            //TODO : ADICIONAR MODELO DE PREVISÃO
             double randomDouble = Math.random();
-            randomDouble = randomDouble * 50 + 1;
+            randomDouble = randomDouble * 80 + 1;
 
             double duration = getDurationToMarker(marker);
 
-            decisionFactors.add(new DecisionFactor(duration, randomDouble, distance, distanceDestinationToPL, marker));
+            decisionFactors.add(new DecisionFactor(duration, randomDouble, pricePerHour, distance, distanceDestinationToPL, marker));
         }
 
         return returnBestMarker(decisionFactors);
@@ -286,7 +287,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         }
 
         for(DecisionFactor df : decisionFactors) {
-            df.setWeight(((100 - df.getOccupancy()) * 0.5) + (100 - ((df.getDuration() * 100) / maxDuration) * 0.3) + (100 - ((df.getDistanceDestinationToPL() * 100) / maxDistanceDestinationToCs) * 0.2));
+            df.setWeight(((100 - df.getOccupancy()) * 0.45) + (100 - ((df.getDuration() * 100) / maxDuration) * 0.25) + (100 - ((df.getDistanceDestinationToPL() * 100) / maxDistanceDestinationToCs) * 0.2) + (50 - (df.getPricePerHour() * 10)) * 0.1);
         }
 
         DecisionFactor temp = decisionFactors.get(0);
@@ -363,9 +364,9 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
     private void addMapMarkers(){
         for (Park park : mParks) {
-            Bitmap b = BitmapFactory.decodeResource(getResources(), park.getIconPicture());
+            Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.placeholder);
             Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/14,b.getHeight()/14, false);
-            Marker marker = mMap.addMarker(new MarkerOptions().position(park.getLocation()).title(park.getName()).icon(BitmapDescriptorFactory.fromBitmap(icon)));
+            Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(park.getLatitude(), park.getLongitude())).title(park.getName()).icon(BitmapDescriptorFactory.fromBitmap(icon)));
             marker.setTag(park);
             mMarkersArray.add(marker);
         }
@@ -445,8 +446,6 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             address.setText(mPark.getAddress());
             TextView occupancy = (TextView) popupView.findViewById(R.id.occupancy);
             occupancy.setText(mPark.getOccupancyPercentage() + "%");
-            ImageView photo = (ImageView) popupView.findViewById(R.id.photo);
-            photo.setImageResource(mPark.getPhoto());
             TextView hours = (TextView) popupView.findViewById(R.id.hours);
             hours.setText(mPark.getWorkHours());
             TextView period = (TextView) popupView.findViewById(R.id.period);

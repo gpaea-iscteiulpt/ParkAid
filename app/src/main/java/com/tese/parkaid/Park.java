@@ -8,7 +8,6 @@ public class Park implements Serializable {
 
     private String name;
     private String description;
-    private int iconPicture;
     private int occupancyPercentage;
     private double priceperhour;
     private int totalslots;
@@ -72,14 +71,6 @@ public class Park implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public int getIconPicture() {
-        return iconPicture;
-    }
-
-    public void setIconPicture(int iconPicture) {
-        this.iconPicture = iconPicture;
     }
 
     public int getOccupancyPercentage() {
