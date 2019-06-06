@@ -134,10 +134,9 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        //mLocation = (Location) getIntent().getParcelableExtra("LastLocation");
-        Location newLocation = new Location("Sintra");
-        newLocation.setLatitude(38.787288);
-        newLocation.setLongitude(-9.373206);
+        Location newLocation = new Location("ISCTE");
+        newLocation.setLatitude(38.749135);
+        newLocation.setLongitude(-9.154833);
         mLocation = newLocation;
 
         mWhereFrom = (String) getIntent().getStringExtra("WhereFrom");
@@ -184,7 +183,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             for (Marker marker : mMarkersArray) {
                 if (marker.getTag().equals(mClosestPark)) {
                     mMarkerSelected = marker;
-                    calculateDirections(marker);
+                    calculateDirections(marker, true);
                     break;
                 }
             }
@@ -197,7 +196,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                     for (Marker marker : mMarkersArray) {
                         if (marker.getTag().equals(mClosestPark)) {
                             mMarkerSelected = marker;
-                            calculateDirections(marker);
+                            calculateDirections(marker, true);
                             break;
                         }
                     }
@@ -253,12 +252,13 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             double distanceDestinationToPL = mDestination.distanceTo(parkingLotLocation);
 
             //TODO : ADICIONAR MODELO DE PREVISÃO
-            double randomDouble = Math.random();
-            randomDouble = randomDouble * 80 + 1;
+            //exemplo 1: resultado 40-50%
+            //exemplo 2: resultado 20-30%
+            int predictedModel = 50;
 
             double duration = getDurationToMarker(marker);
 
-            decisionFactors.add(new DecisionFactor(duration, randomDouble, pricePerHour, distance, distanceDestinationToPL, marker));
+            decisionFactors.add(new DecisionFactor(duration, predictedModel, pricePerHour, distance, distanceDestinationToPL, marker));
         }
 
         return returnBestMarker(decisionFactors);
@@ -287,19 +287,20 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         }
 
         for(DecisionFactor df : decisionFactors) {
-            df.setWeight(((100 - df.getOccupancy()) * 0.45) + (100 - ((df.getDuration() * 100) / maxDuration) * 0.25) + (100 - ((df.getDistanceDestinationToPL() * 100) / maxDistanceDestinationToCs) * 0.2) + (50 - (df.getPricePerHour() * 10)) * 0.1);
+            df.setWeight(((110 - df.getOccupancy()) * 0.45) + (100 - ((df.getDuration() * 100) / maxDuration) * 0.25) + (100 - ((df.getDistanceDestinationToPL() * 100) / maxDistanceDestinationToCs) * 0.2) + (50 - (df.getPricePerHour() * 10)) * 0.1);
         }
 
         DecisionFactor temp = decisionFactors.get(0);
-        for(int i = 1; i<decisionFactors.size(); i++) {
-            DecisionFactor df1 = decisionFactors.get(i);
-            if(temp.getWeight() > df1.getWeight()){
-                temp = temp;
-            }else{
-                temp = df1;
+        if(decisionFactors.size()>2) {
+            for (int i = 1; i < decisionFactors.size(); i++) {
+                DecisionFactor df1 = decisionFactors.get(i);
+                if (temp.getWeight() > df1.getWeight()) {
+                    temp = temp;
+                } else {
+                    temp = df1;
+                }
             }
         }
-
 
         return temp;
     }
@@ -364,8 +365,8 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
     private void addMapMarkers(){
         for (Park park : mParks) {
-            Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.placeholder);
-            Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/14,b.getHeight()/14, false);
+            Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.parkingfree);
+            Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/4,b.getHeight()/4, false);
             Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(park.getLatitude(), park.getLongitude())).title(park.getName()).icon(BitmapDescriptorFactory.fromBitmap(icon)));
             marker.setTag(park);
             mMarkersArray.add(marker);
@@ -469,7 +470,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 public void onClick(View v) {
                     resetSelectedMarker();
                     mMarkerSelected = marker;
-                    calculateDirections(marker);
+                    calculateDirections(marker, false);
                     popupWindow.dismiss();
                 }
             });
@@ -493,7 +494,14 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         return false;
     }
 
-    public void calculateDirections(Marker marker){
+    public void calculateDirections(Marker marker, boolean isNavegate){
+
+        int occupancyTemp = 0;
+        if(isNavegate) {
+            occupancyTemp = (int) mDecisionFactor.getOccupancy();
+        }
+        final int occupancyLevel = occupancyTemp;
+
         com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(
                 marker.getPosition().latitude,
                 marker.getPosition().longitude
@@ -511,7 +519,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         directions.destination(destination).setCallback(new PendingResult.Callback<DirectionsResult>() {
             @Override
             public void onResult(DirectionsResult result) {
-                addPolylinesToMap(result);
+                addPolylinesToMap(result, occupancyLevel);
             }
 
             @Override
@@ -521,14 +529,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         });
     }
 
-    public int getOccupancyLevel(){
-        //TODO Adicionar modelos de previsão;
-        double randomDouble = Math.random();
-        randomDouble = randomDouble * 75 + 1;
-        return (int) randomDouble;
-    }
-
-    private void addPolylinesToMap(final DirectionsResult result){
+    private void addPolylinesToMap(final DirectionsResult result, final int occupancyLevel){
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
@@ -551,9 +552,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                     }
 
                     Polyline polyline = mMap.addPolyline(new PolylineOptions().addAll(newDecodedPath));
-
-                    //TODO Adicionar método que gera a ocupação;
-                    mPolylineInformation.put(polyline.getId(), new SnippetInformation(20));
+                    mPolylineInformation.put(polyline.getId(), new SnippetInformation(occupancyLevel));
 
                     polyline.setClickable(true);
                     polyline.setColor(ContextCompat.getColor(Maps.this, R.color.grey));
@@ -605,7 +604,8 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
                 LatLng endLocation = new LatLng(polylineData.getLeg().endLocation.lat, polylineData.getLeg().endLocation.lng);
                 SnippetInformation info = mPolylineInformation.get(polyline.getId());
-                String snippetString = "Occupancy at ETA: " + info.ocuppancy + "%";
+                //String snippetString = "Occupancy at ETA: " + info.ocuppancy + "%";
+                String snippetString = "Occupancy at ETA: 40%-50%";
                 Marker marker = mMap.addMarker(new MarkerOptions().position(endLocation)
                                         .title("Duration: " + polylineData.getLeg().duration)
                                         .snippet(snippetString));

@@ -71,13 +71,16 @@ public class Menu extends AppCompatActivity {
         storageRef = FirebaseStorage.getInstance().getReference();
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
+        Constants.setUsername("John Doe");
+        Constants.setUserPoints(50);
+
         fillParks();
         getLocation();
         fillUserPoints();
     }
 
     private void fillParks() {
-        mDatabase.child("parks").addValueEventListener(new ValueEventListener() {
+        mDatabase.child("park").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {

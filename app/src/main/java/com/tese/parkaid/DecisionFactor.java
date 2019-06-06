@@ -5,14 +5,14 @@ import com.google.android.gms.maps.model.Marker;
 public class DecisionFactor {
 
     public double duration;
-    public double occupancy;
+    public int occupancy;
     public Marker marker;
     public double distance;
     public double distanceDestinationToPL;
     public double pricePerHour;
     public double weight;
 
-    public DecisionFactor(double duration, double occupancy, double pricePerHour, double distance, double distanceDestinationToPL, Marker marker) {
+    public DecisionFactor(double duration, int occupancy, double pricePerHour, double distance, double distanceDestinationToPL, Marker marker) {
         this.duration = duration;
         this.occupancy = occupancy;
         this.pricePerHour = pricePerHour;
@@ -76,11 +76,11 @@ public class DecisionFactor {
         this.duration = duration;
     }
 
-    public double getOccupancy() {
+    public int getOccupancy() {
         return occupancy;
     }
 
-    public void setOccupancy(double occupancy) {
+    public void setOccupancy(int occupancy) {
         this.occupancy = occupancy;
     }
 }
