@@ -80,7 +80,7 @@ public class Menu extends AppCompatActivity {
     }
 
     private void fillParks() {
-        mDatabase.child("park").addValueEventListener(new ValueEventListener() {
+        mDatabase.child("parks").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
