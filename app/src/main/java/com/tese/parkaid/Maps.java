@@ -268,22 +268,27 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
         double maxDuration = 0;
         double maxDistanceDestinationToCs = 0;
-        for(int i = 0; i < decisionFactors.size() - 1; i++) {
+        if (decisionFactors.size() >= 2) {
+            for (int i = 0; i < decisionFactors.size() - 1; i++) {
 
-            DecisionFactor df1 = decisionFactors.get(i);
-            DecisionFactor df2 = decisionFactors.get(i+1);
+                DecisionFactor df1 = decisionFactors.get(i);
+                DecisionFactor df2 = decisionFactors.get(i + 1);
 
-            if(df1.getDuration() > df2.getDuration()){
-                maxDuration = df1.getDuration();
-            }else{
-                maxDuration = df2.getDuration();
+                if (df1.getDuration() > df2.getDuration()) {
+                    maxDuration = df1.getDuration();
+                } else {
+                    maxDuration = df2.getDuration();
+                }
+
+                if (df1.getDistanceDestinationToPL() > df2.getDistanceDestinationToPL()) {
+                    maxDistanceDestinationToCs = df1.getDistanceDestinationToPL();
+                } else {
+                    maxDistanceDestinationToCs = df2.getDistanceDestinationToPL();
+                }
             }
-
-            if(df1.getDistanceDestinationToPL() > df2.getDistanceDestinationToPL()){
-                maxDistanceDestinationToCs = df1.getDistanceDestinationToPL();
-            }else{
-                maxDistanceDestinationToCs = df2.getDistanceDestinationToPL();
-            }
+        }else{
+            maxDuration = decisionFactors.get(0).getDuration();
+            maxDistanceDestinationToCs = decisionFactors.get(0).getDistanceDestinationToPL();
         }
 
         for(DecisionFactor df : decisionFactors) {
@@ -291,7 +296,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         }
 
         DecisionFactor temp = decisionFactors.get(0);
-        if(decisionFactors.size()>2) {
+        if(decisionFactors.size()>=2) {
             for (int i = 1; i < decisionFactors.size(); i++) {
                 DecisionFactor df1 = decisionFactors.get(i);
                 if (temp.getWeight() > df1.getWeight()) {
@@ -365,7 +370,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
     private void addMapMarkers(){
         for (Park park : mParks) {
-            Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.parkingfree);
+            Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.placeholder);
             Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/4,b.getHeight()/4, false);
             Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(park.getLatitude(), park.getLongitude())).title(park.getName()).icon(BitmapDescriptorFactory.fromBitmap(icon)));
             marker.setTag(park);
