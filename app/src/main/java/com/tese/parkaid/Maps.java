@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.location.LocationManager;
@@ -21,7 +20,6 @@ import android.os.Looper;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.res.ResourcesCompat;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
 import android.util.Log;
@@ -29,9 +27,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
@@ -72,6 +68,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
+import java.io.*;
+import hex.genmodel.easy.RowData;
+import hex.genmodel.easy.EasyPredictModelWrapper;
+import hex.genmodel.easy.prediction.*;
+import hex.genmodel.MojoModel;
+
 public class Maps extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnPolylineClickListener, GoogleMap.OnInfoWindowClickListener{
 
     private static final String TAG = Maps.class.getSimpleName();
@@ -107,9 +109,6 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         setContentView(R.layout.activity_maps);
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-//        URL weatherUrl = WeatherApi.buildUrlWeather();
-//        new JsonTask().execute(weatherUrl);
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
         mCurrentDateAndTime = Calendar.getInstance().getTime();
@@ -251,6 +250,9 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             double pricePerHour = tempPark.getPricePerHour();
             double distanceDestinationToPL = mDestination.distanceTo(parkingLotLocation);
 
+            //URL weatherUrl = WeatherApi.buildUrlWeather();
+            //new JsonTask().execute(weatherUrl);
+
             //TODO : ADICIONAR MODELO DE PREVISÃO
             //exemplo 1: resultado 40-50%
             //exemplo 2: resultado 20-30%
@@ -370,7 +372,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
     private void addMapMarkers(){
         for (Park park : mParks) {
-            Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.placeholder);
+            Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.parkingfree);
             Bitmap icon = Bitmap.createScaledBitmap(b, b.getWidth()/4,b.getHeight()/4, false);
             Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(park.getLatitude(), park.getLongitude())).title(park.getName()).icon(BitmapDescriptorFactory.fromBitmap(icon)));
             marker.setTag(park);
