@@ -46,6 +46,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.libraries.places.api.model.DayOfWeek;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -62,6 +63,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URL;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -71,6 +73,7 @@ import java.util.List;
 import java.io.*;
 import hex.genmodel.easy.RowData;
 import hex.genmodel.easy.EasyPredictModelWrapper;
+import hex.genmodel.easy.exception.PredictException;
 import hex.genmodel.easy.prediction.*;
 import hex.genmodel.MojoModel;
 
@@ -97,9 +100,13 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     private double mTimeToDestination;
 
     private Weather mCurrentWeather;
-    private Date mCurrentDateAndTime;
+    private String mCurrentRoad;
+    private HashMap<String, String> mRoadsCoordinates = new HashMap<String, String>();
+    private HashMap<String, String> mRoadsTimes = new HashMap<String, String>();
     public HashMap<String, SnippetInformation> mPolylineInformation = new HashMap<String, SnippetInformation>();
     private DecisionFactor mDecisionFactor;
+
+    private String mPredictedClass;
 
     private DatabaseReference mDatabase;
 
@@ -111,8 +118,18 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         mapFragment.getMapAsync(this);
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
-        mCurrentDateAndTime = Calendar.getInstance().getTime();
         mParks = (ArrayList<Park>) getIntent().getExtras().getSerializable("Parks");
+
+        URL weatherUrl = WeatherApi.buildUrlWeather();
+        new JsonTask().execute(weatherUrl);
+
+        mRoadsTimes = fillRoads();
+        mRoadsCoordinates = fillRoads();
+        for(HashMap.Entry<String, String> pair: mRoadsCoordinates.entrySet()) {
+            mCurrentRoad = pair.getKey();
+            URL tomtomUrl = TomTomApi.buildUrlTomTom(pair.getValue());
+            new JsonTaskTomTom().execute(tomtomUrl);
+        }
 
         Button btReset = (Button) findViewById(R.id.btReset);
         btReset.setOnClickListener(new View.OnClickListener() {
@@ -171,7 +188,13 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                 .strokeColor(getColor(R.color.circleStrokeBlue))
                 .fillColor(getColor(R.color.circleInsideBlue)));
 
-        mDecisionFactor = checkBestPark(mDestination);
+        try {
+            mDecisionFactor = checkBestPark(mDestination);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (PredictException e) {
+            e.printStackTrace();
+        }
         mClosestDistance = (float) mDecisionFactor.getDistance();
         mMarkerSelected = mDecisionFactor.getMarker();
         mTimeToDestination = mDecisionFactor.getDuration();
@@ -237,7 +260,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
     }
 
 
-    private DecisionFactor checkBestPark(Location mDestination){
+    private DecisionFactor checkBestPark(Location mDestination) throws IOException, PredictException {
 
         ArrayList<DecisionFactor> decisionFactors = new ArrayList<DecisionFactor>();
 
@@ -249,21 +272,140 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             double distance = mLocation.distanceTo(parkingLotLocation);
             double pricePerHour = tempPark.getPricePerHour();
             double distanceDestinationToPL = mDestination.distanceTo(parkingLotLocation);
-
-            //URL weatherUrl = WeatherApi.buildUrlWeather();
-            //new JsonTask().execute(weatherUrl);
-
-            //TODO : ADICIONAR MODELO DE PREVISÃO
-            //exemplo 1: resultado 40-50%
-            //exemplo 2: resultado 20-30%
-            int predictedModel = 50;
-
             double duration = getDurationToMarker(marker);
+            int month = 0, year = 0, hour = 0, day = 0, dayofweek = 0, flag_weekend = 0;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                LocalDateTime datetime = LocalDateTime.now();
+                month = datetime.getMonth().getValue();
+                year = datetime.getYear();
+                hour = datetime.getHour();
+                day = datetime.getDayOfMonth();
+                dayofweek = datetime.getDayOfWeek().getValue();
+                flag_weekend = 0;
+                if (dayofweek == 6 || dayofweek == 7){
+                    flag_weekend = 1;
+                }
+                dayofweek = dayofweek - 1;
+            }
+            int isRain = 0;
+            if(mCurrentWeather.getMain().equals("Drizzle") || mCurrentWeather.getMain().equals("Rain") || mCurrentWeather.getMain().equals("Thunderstorm")){
+                isRain = 1;
+            }
+            int isFog = 0;
+            if(mCurrentWeather.getMain().equals("Fog") || mCurrentWeather.getMain().equals("Mist") || mCurrentWeather.getMain().equals("Haze") || mCurrentWeather.getMain().equals("Smoke")){
+                isFog = 1;
+            }
+            int flag_event = 0;
+            int flag_vacationperiod = 0;
+            int flag_holiday = 0;
+            double predictedModel = 0;
+            hour = hour + (int) (duration / 3600);
+            RowData row = new RowData();
+            row.put("dayofweek", dayofweek);
+            row.put("flag_vacationperiod", flag_vacationperiod);
+            row.put("flag_event", flag_event);
+            row.put("flag_holiday", flag_holiday);
+            row.put("flag_weekend", flag_weekend);
+            row.put("flag_rain", isRain);
+            row.put("flag_fog", isFog);
+            row.put("weather_description", mCurrentWeather.getDescription());
+            row.put("weather_main", mCurrentWeather.getMain());
+            row.put("year", year);
+            row.put("month", month);
+            row.put("day", day);
+            row.put("hour", hour);
+            if (tempPark.getName() == "Park 1"){
+                EasyPredictModelWrapper model = new EasyPredictModelWrapper(MojoModel.load("GBM_model_park1.zip"));
+                row.put("Praça Marquês de Pombal", mRoadsTimes.get("Praça Marquês de Pombal"));
+                row.put("Rua Braamcamp", mRoadsTimes.get("Rua Braamcamp"));
+                row.put("Avenida da Liberdade", mRoadsTimes.get("Avenida da Liberdade"));
+                row.put("Avenida Duque de Loulé", mRoadsTimes.get("Avenida Duque de Loulé"));
+                row.put("Rua Joaquim António de Aguiar", mRoadsTimes.get("Rua Joaquim António de Aguiar"));
+                row.put("Avenida Fontes Pereira de Melo", mRoadsTimes.get("Avenida Fontes Pereira de Melo"));
+                BinomialModelPrediction p = model.predictBinomial(row);
+                predictedModel = p.classProbabilities[0];
+                System.out.print("Class probabilities: " + p.classProbabilities.toString());
 
-            decisionFactors.add(new DecisionFactor(duration, predictedModel, pricePerHour, distance, distanceDestinationToPL, marker));
+                if(predictedModel == 1){
+                    mPredictedClass = "0%-10%";
+                } else if (predictedModel == 2){
+                    mPredictedClass = "10%-30%";
+                } else if (predictedModel == 3){
+                    mPredictedClass = "30%-50%";
+                } else if (predictedModel == 4){
+                    mPredictedClass = "50%-75%";
+                } else {
+                    mPredictedClass = "75%-100%";
+                }
+
+            } else if (tempPark.getName() == "Park 2"){
+                EasyPredictModelWrapper model = new EasyPredictModelWrapper(MojoModel.load("GBM_model_park2.zip"));
+                row.put("Praça Marquês de Pombal", mRoadsTimes.get("Praça Marquês de Pombal"));
+                row.put("Rua Braamcamp", mRoadsTimes.get("Rua Braamcamp"));
+                row.put("Rua Castilho", mRoadsTimes.get("Rua Castilho"));
+                row.put("Rua Alexandre Herculano", mRoadsTimes.get("Rua Alexandre Herculano"));
+                BinomialModelPrediction p = model.predictBinomial(row);
+                predictedModel = p.classProbabilities[0];
+                System.out.print("Class probabilities: " + p.classProbabilities.toString());
+
+                if(predictedModel == 1){
+                    mPredictedClass = "0%-10%";
+                } else if (predictedModel == 2){
+                    mPredictedClass = "10%-35%";
+                } else if (predictedModel == 3){
+                    mPredictedClass = "35%-60%";
+                } else if (predictedModel == 4){
+                    mPredictedClass = "60%-80%";
+                } else {
+                    mPredictedClass = "80%-100%";
+                }
+
+            } else {
+                EasyPredictModelWrapper model = new EasyPredictModelWrapper(MojoModel.load("GBM_model_park3.zip"));
+                row.put("Praça Marquês de Pombal", mRoadsTimes.get("Praça Marquês de Pombal"));
+                row.put("Rua Braamcamp", mRoadsTimes.get("Rua Braamcamp"));
+                row.put("Rua Castilho", mRoadsTimes.get("Rua Castilho"));
+                BinomialModelPrediction p = model.predictBinomial(row);
+                predictedModel = p.classProbabilities[0];
+                System.out.print("Class probabilities: " + p.classProbabilities.toString());
+
+                if(predictedModel == 1){
+                    mPredictedClass = "0%-10%";
+                } else if (predictedModel == 2){
+                    mPredictedClass = "10%-20%";
+                } else if (predictedModel == 3){
+                    mPredictedClass = "20%-55%";
+                } else if (predictedModel == 4){
+                    mPredictedClass = "55%-75%";
+                } else {
+                    mPredictedClass = "75%-100%";
+                }
+            }
+            decisionFactors.add(new DecisionFactor(duration, (int) predictedModel, pricePerHour, distance, distanceDestinationToPL, marker));
         }
-
         return returnBestMarker(decisionFactors);
+    }
+
+    public HashMap<String, String> fillRoads(){
+        // Rua Castilho - 38.724143, -9.152748
+        // Rua Braamcamp - 38.722842, -9.151529
+        // Praça Marquês de Pombal - 38.725588, -9.150513
+        // Rua Alexandre Herculano - 38.722377, -9.150168
+        // Avenida da Liberdade - 38.720662, -9.145989
+        // Avenida Duque de Loulé - 38.725590, -9.148507
+        // Rua Joaquim António de Aguiar - 38.725135, -9.153723
+        // Avenida Fontes Pereira de Melo - 38.726866, -9.149228
+
+        HashMap<String, String> roads = new HashMap<String, String>();
+        roads.put("Rua Castilho", "38.724143,-9.152748");
+        roads.put("Rua Braamcamp", "38.722842,-9.151529");
+        roads.put("Praça Marquês de Pombal", "38.725588,-9.150513");
+        roads.put("Rua Alexandre Herculano", "38.722377,-9.150168");
+        roads.put("Avenida da Liberdade", "38.720662,-9.145989");
+        roads.put("Avenida Duque de Loulé", "38.725590,-9.148507");
+        roads.put("Rua Joaquim António de Aguiar", "38.725135,-9.1537239");
+        roads.put("Avenida Fontes Pereira de Melo", "38.726866,-9.149228");
+        return roads;
     }
 
     public DecisionFactor returnBestMarker(ArrayList<DecisionFactor> decisionFactors){
@@ -611,8 +753,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
                 LatLng endLocation = new LatLng(polylineData.getLeg().endLocation.lat, polylineData.getLeg().endLocation.lng);
                 SnippetInformation info = mPolylineInformation.get(polyline.getId());
-                //String snippetString = "Occupancy at ETA: " + info.ocuppancy + "%";
-                String snippetString = "Occupancy at ETA: 40%-50%";
+                String snippetString = "Occupancy at ETA: " + mPredictedClass;
                 Marker marker = mMap.addMarker(new MarkerOptions().position(endLocation)
                                         .title("Duration: " + polylineData.getLeg().duration)
                                         .snippet(snippetString));
@@ -715,6 +856,44 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         }
 
 
+    }
+
+    public class JsonTaskTomTom extends AsyncTask<URL, Void, String> {
+
+        @Override
+        protected String doInBackground(URL... urls) {
+            URL tomtomUrl = urls[0];
+            String tomtomSearchResults = null;
+            try{
+                tomtomSearchResults = TomTomApi.getResponseForAPI(tomtomUrl);
+            }catch (IOException ioe){
+                ioe.printStackTrace();
+            }
+            return tomtomSearchResults;
+        }
+
+        @Override
+        protected void onPostExecute(String tomtomSearchResults){
+            if(tomtomSearchResults != null && !tomtomSearchResults.equals("")){
+                String currentTime = parseJSON(tomtomSearchResults);
+                mRoadsTimes.put(mCurrentRoad, currentTime);
+            }
+        }
+
+        private String parseJSON(String tomtomSearchResults){
+            String currentTravelTime = "";
+            if(tomtomSearchResults != null){
+                try {
+                    JSONObject rootObject = new JSONObject(tomtomSearchResults);
+                    JSONObject tomtom = rootObject.getJSONObject("flowSegmentData");
+                    currentTravelTime = tomtom.getString("currentTravelTime");
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            return currentTravelTime;
+        }
     }
 
     private void showMessage(String str){

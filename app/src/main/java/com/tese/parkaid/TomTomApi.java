@@ -36,8 +36,8 @@ public class TomTomApi {
         return null;
     }
 
-    protected static URL buildUrlTomTom(){
-        Uri buildUri = Uri.parse(TOMTOM_BASE_URL).buildUpon().appendQueryParameter("point", "").appendQueryParameter(PARAM_API_KEY, TOMWEATHER_API_KEY).build();
+    protected static URL buildUrlTomTom(String addCoordinates){
+        Uri buildUri = Uri.parse(TOMTOM_BASE_URL).buildUpon().appendQueryParameter("point", addCoordinates).appendQueryParameter(PARAM_API_KEY, TOMWEATHER_API_KEY).build();
         URL url = null;
         try{
             url = new URL(buildUri.toString());
