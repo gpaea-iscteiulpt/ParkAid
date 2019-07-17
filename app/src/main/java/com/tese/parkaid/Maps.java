@@ -315,7 +315,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
             row.put("hour", hour);*/
             double predictedModel = 0;
             String predictedClass = "";
-            if (tempPark.getName() == "Park 1"){
+            if (tempPark.getName().equals("Park 1")){
                 predictedModel = 2;
                 /*
                 EasyPredictModelWrapper model = new EasyPredictModelWrapper(MojoModel.load("GBM_model_park1.zip"));
@@ -341,7 +341,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
                     predictedClass = "75%-100%";
                 }
 
-            } else if (tempPark.getName() == "Park 2"){
+            } else if (tempPark.getName().equals("Park 2")){
                 predictedModel = 2;
                 /*
                 EasyPredictModelWrapper model = new EasyPredictModelWrapper(MojoModel.load("GBM_model_park2.zip"));
@@ -655,11 +655,11 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
     public void calculateDirections(Marker marker, boolean isNavegate){
 
-        int occupancyTemp = 0;
+        String occupancyTemp = "";
         if(isNavegate) {
-            occupancyTemp = (int) mDecisionFactor.getOccupancy();
+            occupancyTemp =  mDecisionFactor.getPredictedClass();
         }
-        final int occupancyLevel = occupancyTemp;
+        final String occupancyLevel = occupancyTemp;
 
         com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(
                 marker.getPosition().latitude,
@@ -688,7 +688,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
         });
     }
 
-    private void addPolylinesToMap(final DirectionsResult result, final int occupancyLevel){
+    private void addPolylinesToMap(final DirectionsResult result, final String occupancyLevel){
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
@@ -763,7 +763,7 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
                 LatLng endLocation = new LatLng(polylineData.getLeg().endLocation.lat, polylineData.getLeg().endLocation.lng);
                 SnippetInformation info = mPolylineInformation.get(polyline.getId());
-                String snippetString = "Occupancy at ETA: " + info.ocuppancy;
+                String snippetString = "Occupation at ETA: " + info.ocuppancy;
                 Marker marker = mMap.addMarker(new MarkerOptions().position(endLocation)
                                         .title("Duration: " + polylineData.getLeg().duration)
                                         .snippet(snippetString));
@@ -912,9 +912,9 @@ public class Maps extends FragmentActivity implements OnMapReadyCallback, Google
 
     public class SnippetInformation{
 
-        private int ocuppancy;
+        private String ocuppancy;
 
-        public SnippetInformation(int ocuppancy){
+        public SnippetInformation(String ocuppancy){
             this.ocuppancy = ocuppancy;
         }
 
