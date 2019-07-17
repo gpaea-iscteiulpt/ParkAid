@@ -11,14 +11,16 @@ public class DecisionFactor {
     public double distanceDestinationToPL;
     public double pricePerHour;
     public double weight;
+    public String predictedClass;
 
-    public DecisionFactor(double duration, int occupancy, double pricePerHour, double distance, double distanceDestinationToPL, Marker marker) {
+    public DecisionFactor(double duration, int occupancy, double pricePerHour, double distance, double distanceDestinationToPL, Marker marker, String predictedClass) {
         this.duration = duration;
         this.occupancy = occupancy;
         this.pricePerHour = pricePerHour;
         this.distanceDestinationToPL = distanceDestinationToPL;
         this.distance = distance;
         this.marker = marker;
+        this.predictedClass = predictedClass;
     }
 
     public DecisionFactor() {
@@ -26,6 +28,14 @@ public class DecisionFactor {
 
     public double getPricePerHour() {
         return pricePerHour;
+    }
+
+    public String getPredictedClass() {
+        return predictedClass;
+    }
+
+    public void setPredictedClass(String predictedClass) {
+        this.predictedClass = predictedClass;
     }
 
     public void setPricePerHour(double pricePerHour) {

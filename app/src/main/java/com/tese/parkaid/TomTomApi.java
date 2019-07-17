@@ -11,7 +11,7 @@ import java.util.Scanner;
 
 public class TomTomApi {
 
-    private final static String TOMTOM_BASE_URL = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/xml?";
+    private final static String TOMTOM_BASE_URL = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?";
     private final static String pointSeperator = "%2C";
     private final static String TOMWEATHER_API_KEY = "Mc3hzO22aGsxW5o9j3tJYXsRbiuKOGbG";
     private final static String PARAM_API_KEY = "key";
